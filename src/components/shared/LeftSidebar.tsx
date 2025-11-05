@@ -58,6 +58,7 @@ export function LeftSidebar() {
     "luiz@weunite.com",
     "matheus@weunite.com",
     "matheusoliveirale2007@gmail.com",
+    "mathessoliv@gmail.com",
     "manoel_jonathan@hotmail.com",
   ];
 
