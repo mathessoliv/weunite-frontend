@@ -25,6 +25,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
   getReportedOpportunitiesDetailsRequest,
   deleteOpportunityByAdminRequest,
+  restoreOpportunityByAdminRequest,
   dismissReportsRequest,
 } from "@/api/services/adminService";
 import { toast } from "sonner";
@@ -120,6 +121,27 @@ export function ReportedOpportunitiesPage() {
     }
   };
 
+  const handleRestoreOpportunity = async (opportunityId: string) => {
+    const confirmed = window.confirm(
+      "Tem certeza que deseja restaurar esta oportunidade?",
+    );
+
+    if (!confirmed) return;
+
+    const response = await restoreOpportunityByAdminRequest(
+      Number(opportunityId),
+    );
+
+    if (response.success) {
+      toast.success(response.message || "Oportunidade restaurada com sucesso!");
+      loadReportedOpportunities(); // Recarrega a lista
+    } else {
+      toast.error(
+        `Erro: ${response.error || "Não foi possível restaurar a oportunidade"}`,
+      );
+    }
+  };
+
   const handleDismissReports = async (opportunityId: string) => {
     const confirmed = window.confirm(
       "Tem certeza que deseja descartar as denúncias desta oportunidade?",
@@ -170,8 +192,10 @@ export function ReportedOpportunitiesPage() {
         : true;
 
       const matchesStatus =
-        statusFilter === "all" || reportedOpportunity.status === statusFilter;
-
+        statusFilter === "all" ||
+        reportedOpportunity.status === statusFilter ||
+        (statusFilter === "deleted" &&
+          reportedOpportunity.status === "deleted");
       return matchesSearch && matchesStatus;
     },
   );
@@ -268,7 +292,8 @@ export function ReportedOpportunitiesPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="hidden">Oculto</SelectItem>
+                  <SelectItem value="reviewed">Em Análise</SelectItem>
+                  <SelectItem value="resolved">Resolvido</SelectItem>
                   <SelectItem value="deleted">Deletado</SelectItem>
                 </SelectContent>
               </Select>
@@ -344,16 +369,24 @@ export function ReportedOpportunitiesPage() {
                             className={
                               reportedOpportunity.status === "pending"
                                 ? "border-yellow-500 text-yellow-600"
-                                : reportedOpportunity.status === "hidden"
-                                  ? "border-orange-500 text-orange-600"
-                                  : "border-red-500 text-red-600"
+                                : reportedOpportunity.status === "reviewed"
+                                  ? "border-blue-500 text-blue-600"
+                                  : reportedOpportunity.status === "resolved"
+                                    ? "border-green-500 text-green-600"
+                                    : reportedOpportunity.status === "hidden"
+                                      ? "border-orange-500 text-orange-600"
+                                      : "border-red-500 text-red-600"
                             }
                           >
                             {reportedOpportunity.status === "pending"
                               ? "Pendente"
-                              : reportedOpportunity.status === "hidden"
-                                ? "Oculto"
-                                : "Deletado"}
+                              : reportedOpportunity.status === "reviewed"
+                                ? "Em Análise"
+                                : reportedOpportunity.status === "resolved"
+                                  ? "Resolvido"
+                                  : reportedOpportunity.status === "hidden"
+                                    ? "Oculto"
+                                    : "Deletado"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -363,37 +396,57 @@ export function ReportedOpportunitiesPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleReviewOpportunity(reportedOpportunity)
-                              }
-                            >
-                              Revisar
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDismissReports(
-                                  reportedOpportunity.opportunity.id,
-                                )
-                              }
-                            >
-                              Descartar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteOpportunity(
-                                  reportedOpportunity.opportunity.id,
-                                )
-                              }
-                            >
-                              Deletar
-                            </Button>
+                            {reportedOpportunity.status !== "resolved" &&
+                              reportedOpportunity.status !== "deleted" && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleReviewOpportunity(
+                                        reportedOpportunity,
+                                      )
+                                    }
+                                  >
+                                    Revisar
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDismissReports(
+                                        reportedOpportunity.opportunity.id,
+                                      )
+                                    }
+                                  >
+                                    Descartar
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDeleteOpportunity(
+                                        reportedOpportunity.opportunity.id,
+                                      )
+                                    }
+                                  >
+                                    Deletar
+                                  </Button>
+                                </>
+                              )}
+                            {reportedOpportunity.status === "deleted" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRestoreOpportunity(
+                                    reportedOpportunity.opportunity.id,
+                                  )
+                                }
+                              >
+                                Restaurar
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

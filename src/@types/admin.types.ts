@@ -89,7 +89,7 @@ export interface PostReport {
   status: ReportStatus;
   createdAt: string;
   resolvedAt?: string;
-  resolvedBy?: string;
+  resolvedByAdminId?: number;
   moderationNote?: string;
 }
 
@@ -112,7 +112,7 @@ export interface ReportedPost {
   };
   reports: PostReport[];
   totalReports: number;
-  status: "pending" | "hidden" | "deleted";
+  status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
 export interface ReportedOpportunity {
@@ -135,7 +135,7 @@ export interface ReportedOpportunity {
   };
   reports: PostReport[];
   totalReports: number;
-  status: "pending" | "hidden" | "deleted";
+  status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
 export interface ReportSummary {

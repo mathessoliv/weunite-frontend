@@ -20,11 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { FileText, Flag, Heart, Search, Image, Loader2 } from "lucide-react";
-import type { Report, ReportedPost } from "@/@types/report.types";
+import type { Report, ReportedPost } from "@/@types/admin.types";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
   getReportedPostsDetailsRequest,
   deletePostByAdminRequest,
+  restorePostByAdminRequest,
   dismissReportsRequest,
 } from "@/api/services/adminService";
 import { toast } from "sonner";
@@ -109,6 +110,25 @@ export function ReportedPostsPage() {
     }
   };
 
+  const handleRestorePost = async (postId: string) => {
+    const confirmed = window.confirm(
+      "Tem certeza que deseja restaurar este post?",
+    );
+
+    if (!confirmed) return;
+
+    const response = await restorePostByAdminRequest(Number(postId));
+
+    if (response.success) {
+      toast.success(response.message || "Post restaurado com sucesso!");
+      loadReportedPosts(); // Recarrega a lista
+    } else {
+      toast.error(
+        `Erro: ${response.error || "Não foi possível restaurar o post"}`,
+      );
+    }
+  };
+
   const handleDismissReports = async (postId: string) => {
     const confirmed = window.confirm(
       "Tem certeza que deseja descartar as denúncias deste post?",
@@ -152,7 +172,9 @@ export function ReportedPostsPage() {
       : true;
 
     const matchesStatus =
-      statusFilter === "all" || reportedPost.status === statusFilter;
+      statusFilter === "all" ||
+      reportedPost.status === statusFilter ||
+      (statusFilter === "deleted" && reportedPost.status === "deleted");
 
     return matchesSearch && matchesStatus;
   });
@@ -247,7 +269,8 @@ export function ReportedPostsPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="hidden">Oculto</SelectItem>
+                  <SelectItem value="reviewed">Em Análise</SelectItem>
+                  <SelectItem value="resolved">Resolvido</SelectItem>
                   <SelectItem value="deleted">Deletado</SelectItem>
                 </SelectContent>
               </Select>
@@ -333,16 +356,24 @@ export function ReportedPostsPage() {
                             className={
                               reportedPost.status === "pending"
                                 ? "border-yellow-500 text-yellow-600"
-                                : reportedPost.status === "hidden"
-                                  ? "border-orange-500 text-orange-600"
-                                  : "border-red-500 text-red-600"
+                                : reportedPost.status === "reviewed"
+                                  ? "border-blue-500 text-blue-600"
+                                  : reportedPost.status === "resolved"
+                                    ? "border-green-500 text-green-600"
+                                    : reportedPost.status === "hidden"
+                                      ? "border-orange-500 text-orange-600"
+                                      : "border-red-500 text-red-600"
                             }
                           >
                             {reportedPost.status === "pending"
                               ? "Pendente"
-                              : reportedPost.status === "hidden"
-                                ? "Oculto"
-                                : "Deletado"}
+                              : reportedPost.status === "reviewed"
+                                ? "Em Análise"
+                                : reportedPost.status === "resolved"
+                                  ? "Resolvido"
+                                  : reportedPost.status === "hidden"
+                                    ? "Oculto"
+                                    : "Deletado"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -350,31 +381,49 @@ export function ReportedPostsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end ">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleReviewPost(reportedPost)}
-                            >
-                              Revisar
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDismissReports(reportedPost.post.id)
-                              }
-                            >
-                              Descartar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                handleDeletePost(reportedPost.post.id)
-                              }
-                            >
-                              Deletar
-                            </Button>
+                            {reportedPost.status !== "resolved" &&
+                              reportedPost.status !== "deleted" && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleReviewPost(reportedPost)
+                                    }
+                                  >
+                                    Revisar
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDismissReports(reportedPost.post.id)
+                                    }
+                                  >
+                                    Descartar
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDeletePost(reportedPost.post.id)
+                                    }
+                                  >
+                                    Deletar
+                                  </Button>
+                                </>
+                              )}
+                            {reportedPost.status === "deleted" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRestorePost(reportedPost.post.id)
+                                }
+                              >
+                                Restaurar
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

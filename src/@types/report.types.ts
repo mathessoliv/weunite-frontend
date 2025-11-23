@@ -9,11 +9,7 @@ import type { Opportunity } from "./opportunity.types";
 /**
  * Status possíveis de uma denúncia
  */
-export type ReportStatus =
-  | "pending"
-  | "under_review"
-  | "resolved"
-  | "dismissed";
+export type ReportStatus = "pending" | "under_review" | "resolved";
 
 /**
  * Motivos de denúncia disponíveis
@@ -91,7 +87,7 @@ export interface ReportedPost {
   post: Post;
   reports: PostReport[];
   totalReports: number;
-  status: "pending" | "hidden" | "deleted";
+  status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
 /**
@@ -141,7 +137,7 @@ export interface ReportedOpportunity {
   opportunity: Opportunity;
   reports: OpportunityReport[];
   totalReports: number;
-  status: "active" | "hidden" | "deleted";
+  status: "active" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
 /**

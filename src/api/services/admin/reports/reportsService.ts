@@ -130,6 +130,33 @@ export const deletePostByAdminRequest = async (
   }
 };
 
+/**
+ * Restaura um post deletado
+ */
+export const restorePostByAdminRequest = async (
+  postId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.put(`/admin/posts/${postId}/restore`);
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Post restaurado com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao restaurar post",
+    };
+  }
+};
+
 // ========== Oportunidades Denunciadas ==========
 
 /**
@@ -246,6 +273,35 @@ export const deleteOpportunityByAdminRequest = async (
       data: null,
       message: null,
       error: error.response?.data?.message || "Erro ao deletar oportunidade",
+    };
+  }
+};
+
+/**
+ * Restaura uma oportunidade deletada
+ */
+export const restoreOpportunityByAdminRequest = async (
+  opportunityId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.put(
+      `/admin/opportunities/${opportunityId}/restore`,
+    );
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Oportunidade restaurada com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao restaurar oportunidade",
     };
   }
 };
