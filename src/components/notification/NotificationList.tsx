@@ -1,29 +1,48 @@
 import { Button } from "@/components/ui/button";
 import { NotificationItem } from "./NotificationItem";
+import { GroupedNotificationItem } from "./GroupedNotificationItem";
 import {
   useGetNotifications,
   useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead,
-  useDeleteNotification,
 } from "@/state/useNotifications";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { CheckCheck, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  groupNotifications,
+  isGroupedNotification,
+} from "@/utils/groupNotifications";
+
+const INITIAL_NOTIFICATIONS_LIMIT = 10;
 
 export const NotificationList = () => {
   const userId = useAuthStore((state) => state.user?.id);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_NOTIFICATIONS_LIMIT);
 
   const { data: notificationsData, isLoading } = useGetNotifications(
     Number(userId) || 0,
   );
   const { mutate: markAsRead } = useMarkNotificationAsRead();
   const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead();
-  const { mutate: deleteNotification } = useDeleteNotification();
 
-  const notifications = notificationsData?.success
+  const allNotifications = notificationsData?.success
     ? notificationsData.data || []
     : [];
 
-  const hasUnread = notifications.some((n) => !n.isRead);
+  // Agrupa notificações similares
+  const groupedNotifications = useMemo(
+    () => groupNotifications(allNotifications),
+    [allNotifications],
+  );
+
+  const notifications = useMemo(
+    () => groupedNotifications.slice(0, visibleCount),
+    [groupedNotifications, visibleCount],
+  );
+
+  const hasMore = groupedNotifications.length > visibleCount;
+  const hasUnread = allNotifications.some((n) => !n.isRead);
 
   const handleMarkAllAsRead = () => {
     if (!userId) return;
@@ -34,19 +53,23 @@ export const NotificationList = () => {
     markAsRead({ notificationId });
   };
 
-  const handleDelete = (notificationId: number) => {
-    deleteNotification(notificationId);
+  const handleMarkAsReadGroup = (ids: number[]) => {
+    ids.forEach((id) => markAsRead({ notificationId: id }));
+  };
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + INITIAL_NOTIFICATIONS_LIMIT);
   };
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       {hasUnread && (
-        <div className="flex items-center justify-end p-4 border-b border-border">
+        <div className="flex items-center justify-end px-4 py-3 border-b border-border/50">
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs h-8"
+            className="text-xs h-7 text-primary hover:text-primary"
             onClick={handleMarkAllAsRead}
           >
             <CheckCheck size={14} className="mr-1" />
@@ -71,18 +94,38 @@ export const NotificationList = () => {
             </p>
           </div>
         ) : (
-          <div className="group">
-            {notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={handleMarkAsRead}
-                onDelete={handleDelete}
-              />
-            ))}
+          <div>
+            {notifications.map((notification) =>
+              isGroupedNotification(notification) ? (
+                <GroupedNotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsReadGroup}
+                />
+              ) : (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsRead}
+                />
+              ),
+            )}
           </div>
         )}
       </div>
+
+      {/* Botão "Ver mais" */}
+      {!isLoading && hasMore && (
+        <div className="p-3 border-t border-border/50 bg-background">
+          <Button
+            variant="ghost"
+            className="w-full text-sm font-medium text-primary hover:text-primary hover:bg-primary/5"
+            onClick={handleLoadMore}
+          >
+            Ver mais notificações
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,101 +1,61 @@
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import type { Notification } from "@/@types/notification.types";
+import type { GroupedNotification } from "@/utils/groupNotifications";
 import { getInitials } from "@/utils/getInitials";
 import { useNavigate } from "react-router-dom";
 import { useCommentsModalStore } from "@/stores/useCommentsModalStore";
-import { useChatStore } from "@/stores/useChatStore";
 import { useGetPosts } from "@/state/usePosts";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { useGetFollowing, useFollowAndUnfollow } from "@/state/useFollow";
 import { Heart, MessageCircle, UserPlus, MessageSquare } from "lucide-react";
 
-interface NotificationItemProps {
-  notification: Notification;
-  onMarkAsRead: (id: number) => void;
+interface GroupedNotificationItemProps {
+  notification: GroupedNotification;
+  onMarkAsRead: (ids: number[]) => void;
 }
 
-export const NotificationItem = ({
+export const GroupedNotificationItem = ({
   notification,
   onMarkAsRead,
-}: NotificationItemProps) => {
+}: GroupedNotificationItemProps) => {
   const navigate = useNavigate();
   const openComments = useCommentsModalStore((s) => s.openComments);
-  const setPendingConversationId = useChatStore(
-    (s) => s.setPendingConversationId,
-  );
-  const triggerConversationRefetch = useChatStore(
-    (s) => s.triggerConversationRefetch,
-  );
-  const currentUser = useAuthStore((state) => state.user);
 
-  // Busca TODOS os posts para pegar o específico
-  const { data: postsListData } = useGetPosts(); // Busca todos os posts
-
-  // Encontra o post específico na lista
+  const { data: postsListData } = useGetPosts();
   const posts = postsListData?.success ? postsListData.data : [];
   const targetPost = posts?.find(
     (p: any) => Number(p.id) === Number(notification.relatedEntityId),
   );
 
-  // Lógica de Seguir
-  const { data: followingData } = useGetFollowing(Number(currentUser?.id));
-  const { mutate: followAndUnfollow } = useFollowAndUnfollow();
-
-  const isFollowing = followingData?.data?.data?.some(
-    (f: any) => Number(f.followed.id) === Number(notification.actorId),
-  );
-
-  const handleFollowClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!currentUser) return;
-
-    followAndUnfollow({
-      followerId: Number(currentUser.id),
-      followedId: Number(notification.actorId),
-    });
-  };
-
   const handleClick = () => {
-    // Marca como lida ao clicar
+    // Marca todas as notificações do grupo como lidas
     if (!notification.isRead) {
-      onMarkAsRead(notification.id);
+      const ids = notification.notifications.map((n) => n.id);
+      onMarkAsRead(ids);
     }
 
     // Navega para o contexto relevante
     switch (notification.type) {
       case "POST_LIKE":
-        // Abre modal de comentários para ver o post curtido
-        if (targetPost) {
-          openComments(targetPost, null);
-        } else {
-          // Fallback: navega para o post
-          navigate(`/post/${notification.relatedEntityId}`);
-        }
-        break;
       case "POST_COMMENT":
-      case "COMMENT_REPLY":
-        // Abre modal de comentários se o post foi encontrado na lista
         if (targetPost) {
           openComments(targetPost, null);
         } else {
-          // Fallback: navega para o post
           navigate(`/post/${notification.relatedEntityId}`);
         }
         break;
       case "COMMENT_LIKE":
-        // Navega para o post que contém o comentário
         navigate(`/post/${notification.relatedEntityId}`);
         break;
       case "NEW_FOLLOWER":
-        navigate(`/profile/${notification.actorUsername}`);
+        // Se for apenas 1 seguidor, vai pro perfil dele
+        if (notification.actors.length === 1) {
+          navigate(`/profile/${notification.actors[0].username}`);
+        }
+        // Se forem múltiplos, poderia ir para uma página de seguidores
         break;
       case "NEW_MESSAGE":
-        // Define a conversa pendente, ativa trigger de refetch e navega para o chat
-        setPendingConversationId(Number(notification.relatedEntityId));
-        triggerConversationRefetch(); // ✨ Ativa trigger para refetch
+        // Para mensagens agrupadas, navega para o chat sem conversa específica
+        // O usuário pode escolher qual conversa abrir
         navigate("/chat");
         break;
     }
@@ -116,13 +76,23 @@ export const NotificationItem = ({
     .replace(" semanas", "sem")
     .replace(" semana", "sem");
 
-  const isPostRelated = [
-    "POST_LIKE",
-    "POST_COMMENT",
-    "COMMENT_LIKE",
-    "COMMENT_REPLY",
-  ].includes(notification.type);
-  const isFollowRelated = notification.type === "NEW_FOLLOWER";
+  // Renderiza os avatares empilhados (máximo 3 visíveis)
+  const visibleActors = notification.actors.slice(0, 3);
+
+  // Nomes para exibir
+  const displayNames = () => {
+    if (notification.actors.length === 1) {
+      return notification.actors[0].name;
+    } else if (notification.actors.length === 2) {
+      return `${notification.actors[0].name} e ${notification.actors[1].name}`;
+    } else {
+      return `${notification.actors[0].name}, ${notification.actors[1].name}`;
+    }
+  };
+
+  const isPostRelated = ["POST_LIKE", "POST_COMMENT", "COMMENT_LIKE"].includes(
+    notification.type,
+  );
 
   const getIcon = () => {
     switch (notification.type) {
@@ -164,35 +134,53 @@ export const NotificationItem = ({
       className={`relative flex items-center justify-between px-4 py-3 hover:bg-muted/30 cursor-pointer transition-colors group`}
     >
       <div className="flex items-center gap-3 flex-1">
-        {/* Avatar */}
-        <div className="relative shrink-0">
-          <Avatar className="h-11 w-11">
-            <AvatarImage
-              src={notification.actorProfileImg}
-              alt={notification.actorName}
-            />
-            <AvatarFallback className="text-xs">
-              {getInitials(notification.actorName)}
-            </AvatarFallback>
-          </Avatar>
-          <div
-            className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background ${getIconColor()}`}
-          >
-            {getIcon()}
+        {/* Avatares empilhados */}
+        <div
+          className="relative shrink-0"
+          style={{ width: `${36 + (visibleActors.length - 1) * 12}px` }}
+        >
+          <div className="relative h-11">
+            {visibleActors.map((actor, index) => (
+              <Avatar
+                key={actor.id}
+                className="absolute h-11 w-11 border-2 border-background"
+                style={{
+                  left: `${index * 12}px`,
+                  zIndex: visibleActors.length - index,
+                }}
+              >
+                <AvatarImage src={actor.profileImg} alt={actor.name} />
+                <AvatarFallback className="text-xs">
+                  {getInitials(actor.name)}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            <div
+              className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background ${getIconColor()} z-10`}
+            >
+              {getIcon()}
+            </div>
           </div>
         </div>
 
         {/* Conteúdo */}
         <div className="flex-1 min-w-0 text-sm">
-          <span className="font-semibold text-foreground mr-1">
-            {notification.actorName}
+          <span className="font-semibold text-foreground">
+            {displayNames()}
           </span>
+          {notification.actors.length > 2 && (
+            <span className="font-semibold text-foreground">
+              {" "}
+              e outras {notification.actors.length - 2}{" "}
+              {notification.actors.length - 2 === 1 ? "pessoa" : "pessoas"}
+            </span>
+          )}{" "}
           <span className="text-foreground/90">{notification.message}</span>
           <span className="text-muted-foreground ml-1 text-xs">{timeAgo}</span>
         </div>
       </div>
 
-      {/* Lado Direito: Thumbnail do Post ou Botão Seguir */}
+      {/* Lado Direito: Thumbnail do Post */}
       <div className="ml-3 flex items-center gap-2">
         {isPostRelated && targetPost?.imageUrl && (
           <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
@@ -202,17 +190,6 @@ export const NotificationItem = ({
               className="h-full w-full object-cover"
             />
           </div>
-        )}
-
-        {isFollowRelated && (
-          <Button
-            variant={isFollowing ? "secondary" : "default"}
-            size="sm"
-            className={`h-8 px-4 text-xs font-semibold ${isFollowing ? "bg-muted text-foreground hover:bg-muted/80" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
-            onClick={handleFollowClick}
-          >
-            {isFollowing ? "Seguindo" : "Seguir"}
-          </Button>
         )}
 
         {/* Indicador de não lido (Ponto Azul) */}

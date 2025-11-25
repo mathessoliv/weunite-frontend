@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Mic, Square, Trash2, Send } from "lucide-react";
+import { AudioPlayer } from "@/components/chat/AudioPlayer";
 
 interface AudioRecorderProps {
   onSendAudio: (audioBlob: Blob) => void;
@@ -11,6 +12,10 @@ export const AudioRecorder = ({ onSendAudio }: AudioRecorderProps) => {
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const audioUrl = useMemo(() => {
+    return audioBlob ? URL.createObjectURL(audioBlob) : "";
+  }, [audioBlob]);
 
   const startRecording = async () => {
     try {
@@ -70,25 +75,12 @@ export const AudioRecorder = ({ onSendAudio }: AudioRecorderProps) => {
 
   if (audioBlob) {
     return (
-      <div className="flex items-center gap-1 sm:gap-2">
-        <audio
-          src={URL.createObjectURL(audioBlob)}
-          controls
-          className="h-9 w-[180px] sm:w-[240px]"
-        />
-        <button
-          onClick={cancelRecording}
-          className="p-2 hover:bg-destructive/10 rounded-full transition-colors shrink-0"
-        >
-          <Trash2 size={18} className="text-destructive" />
-        </button>
-        <button
-          onClick={handleSendAudio}
-          className="p-2 hover:bg-primary/10 rounded-full transition-colors shrink-0"
-        >
-          <Send size={18} className="text-primary" />
-        </button>
-      </div>
+      <AudioPlayer
+        src={audioUrl}
+        variant="input"
+        onDelete={cancelRecording}
+        onSend={handleSendAudio}
+      />
     );
   }
 

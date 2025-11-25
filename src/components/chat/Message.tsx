@@ -1,6 +1,24 @@
 import { useState } from "react";
-import { Check, FileText, Download, Play, Pause } from "lucide-react";
+import {
+  Check,
+  FileText,
+  Download,
+  MoreVertical,
+  Trash2,
+  Edit2,
+  X,
+} from "lucide-react";
 import { ImageModal } from "@/components/chat/ImageModal";
+import { AudioPlayer } from "@/components/chat/AudioPlayer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useDeleteMessage, useEditMessage } from "@/state/useChat";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface MessageType {
   id: number;
@@ -12,13 +30,43 @@ interface MessageType {
 
 interface MessageProps {
   message: MessageType;
+  conversationId: number;
+  currentUserId: number;
 }
 
-export const Message = ({ message }: MessageProps) => {
+export const Message = ({
+  message,
+  conversationId,
+  currentUserId,
+}: MessageProps) => {
   const isSender = message.sender === "me";
   const [showImageModal, setShowImageModal] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.text);
+
+  const { mutate: deleteMessage } = useDeleteMessage();
+  const { mutate: editMessage } = useEditMessage();
+
+  const handleDelete = (deleteForEveryone: boolean) => {
+    deleteMessage({
+      messageId: message.id,
+      userId: currentUserId,
+      deleteForEveryone,
+      conversationId,
+    });
+  };
+
+  const handleEdit = () => {
+    if (editContent.trim() !== message.text) {
+      editMessage({
+        messageId: message.id,
+        newContent: editContent,
+        conversationId,
+        userId: currentUserId,
+      });
+    }
+    setIsEditing(false);
+  };
 
   const isImageUrl = (text: string) => {
     return text.match(/\.(jpg|jpeg|png|gif|webp)$/i);
@@ -37,19 +85,42 @@ export const Message = ({ message }: MessageProps) => {
   };
 
   const hasImage = isFileUrl(message.text) && isImageUrl(message.text);
-
-  const handleAudioPlayPause = () => {
-    if (audioRef) {
-      if (isPlaying) {
-        audioRef.pause();
-      } else {
-        audioRef.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
+  const hasAudio = isFileUrl(message.text) && isAudioUrl(message.text);
 
   const renderContent = () => {
+    if (isEditing) {
+      return (
+        <div className="flex items-center gap-2 min-w-[200px]">
+          <Input
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="h-8 text-sm bg-white/10 border-white/20 text-inherit placeholder:text-white/50"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleEdit();
+              if (e.key === "Escape") setIsEditing(false);
+            }}
+          />
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 hover:bg-white/20"
+            onClick={handleEdit}
+          >
+            <Check size={16} />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 hover:bg-white/20"
+            onClick={() => setIsEditing(false)}
+          >
+            <X size={16} />
+          </Button>
+        </div>
+      );
+    }
+
     if (isFileUrl(message.text)) {
       const fullUrl = `http://localhost:8080${message.text}`;
 
@@ -74,25 +145,10 @@ export const Message = ({ message }: MessageProps) => {
         );
       } else if (isAudioUrl(message.text)) {
         return (
-          <div className="flex items-center gap-3 min-w-[200px]">
-            <button
-              onClick={handleAudioPlayPause}
-              className="p-2 rounded-full hover:bg-opacity-80 transition-colors"
-            >
-              {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-            </button>
-            <div className="flex-1">
-              <audio
-                ref={setAudioRef}
-                src={fullUrl}
-                onEnded={() => setIsPlaying(false)}
-                onPause={() => setIsPlaying(false)}
-                onPlay={() => setIsPlaying(true)}
-                className="w-full"
-                controls
-              />
-            </div>
-          </div>
+          <AudioPlayer
+            src={fullUrl}
+            variant={isSender ? "sender" : "receiver"}
+          />
         );
       } else {
         return (
@@ -121,19 +177,54 @@ export const Message = ({ message }: MessageProps) => {
   };
 
   return (
-    <div className={`flex ${isSender ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[85%] md:max-w-[80%] ${isSender ? "order-1" : "order-2"}`}
-      >
-        <div
-          className={`${hasImage ? "p-1" : "p-2 md:p-3"} rounded-lg ${
-            isSender
-              ? "bg-primary text-primary-foreground rounded-br-none"
-              : "bg-card text-card-foreground rounded-bl-none border border-border"
-          }`}
-        >
-          {renderContent()}
+    <div className={`flex ${isSender ? "justify-end" : "justify-start"} mb-4`}>
+      <div className={`flex flex-col max-w-[75%] md:max-w-[60%]`}>
+        <div className="group/message relative">
+          <div
+            className={`${hasImage ? "p-1" : "p-2 md:p-3"} rounded-lg ${
+              isSender
+                ? hasAudio
+                  ? "bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-br-none dark:bg-zinc-800 dark:text-white dark:border-zinc-700"
+                  : "bg-primary text-primary-foreground rounded-br-none"
+                : "bg-white text-zinc-900 rounded-bl-none border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800"
+            }`}
+          >
+            {renderContent()}
+          </div>
+
+          <div
+            className={`absolute top-1 ${isSender ? "left-[-32px]" : "right-[-32px]"} opacity-0 group-hover/message:opacity-100 transition-opacity`}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full hover:bg-muted"
+                >
+                  <MoreVertical size={16} className="text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align={isSender ? "end" : "start"}>
+                {isSender && (
+                  <>
+                    <DropdownMenuItem onClick={() => handleDelete(true)}>
+                      <Trash2 size={14} className="mr-2" />
+                      Apagar mensagem
+                    </DropdownMenuItem>
+                    {!hasImage && !hasAudio && !isFileUrl(message.text) && (
+                      <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                        <Edit2 size={14} className="mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
+
         <div
           className={`flex items-center mt-1 text-xs text-muted-foreground ${
             isSender ? "justify-end" : "justify-start"
@@ -142,10 +233,15 @@ export const Message = ({ message }: MessageProps) => {
           <span>{message.time}</span>
           {isSender && (
             <span className="ml-1 flex items-center">
-              <Check size={12} className={message.read ? "text-primary" : ""} />
               <Check
-                size={12}
-                className={`-ml-1 ${message.read ? "text-primary" : ""}`}
+                size={14}
+                className={
+                  message.read ? "text-blue-500" : "text-muted-foreground"
+                }
+              />
+              <Check
+                size={14}
+                className={`-ml-1.5 ${message.read ? "text-blue-500" : "text-muted-foreground"}`}
               />
             </span>
           )}
