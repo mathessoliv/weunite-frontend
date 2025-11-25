@@ -171,10 +171,11 @@ export function ReportedPostsPage() {
           .includes(searchQuery.toLowerCase())
       : true;
 
+    const statusLower = reportedPost.status?.toString().toLowerCase();
     const matchesStatus =
-      statusFilter === "all" ||
-      reportedPost.status === statusFilter ||
-      (statusFilter === "deleted" && reportedPost.status === "deleted");
+      statusFilter === "all"
+        ? statusLower !== "deleted" && statusLower !== "resolved" // "Todos" exclui apenas deletados e resolvidos
+        : statusLower === statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });

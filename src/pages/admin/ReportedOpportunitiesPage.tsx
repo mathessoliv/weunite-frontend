@@ -191,11 +191,11 @@ export function ReportedOpportunitiesPage() {
             .includes(searchQuery.toLowerCase())
         : true;
 
+      const statusLower = reportedOpportunity.status?.toString().toLowerCase();
       const matchesStatus =
-        statusFilter === "all" ||
-        reportedOpportunity.status === statusFilter ||
-        (statusFilter === "deleted" &&
-          reportedOpportunity.status === "deleted");
+        statusFilter === "all"
+          ? statusLower !== "deleted" && statusLower !== "resolved" // "Todos" exclui apenas deletados e resolvidos
+          : statusLower === statusFilter.toLowerCase();
       return matchesSearch && matchesStatus;
     },
   );

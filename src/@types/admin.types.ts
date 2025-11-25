@@ -160,11 +160,13 @@ export interface Report {
   reportedBy: {
     name: string;
     username: string;
+    profileImg?: string;
   };
   reportedUser: {
     id?: string;
     name: string;
     username: string;
+    profileImg?: string;
   };
   reason: string;
   description: string;
