@@ -86,7 +86,7 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               <Comment key={comment.id} comment={comment} />
             ))
           ) : (
-            <p className="text-gray-500 mt-8">Nenhum comentário encontrado</p>
+            <p className="text-gray-500 mt-8">Nenhuma publicação encontrada</p>
           )}
         </div>
       )}

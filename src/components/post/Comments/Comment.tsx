@@ -128,7 +128,7 @@ export default function Comment({ comment }: { comment: Comment }) {
 
       {/* wrapper with id to allow scrolling/highlight from outside */}
       <div id={`comment-${comment.id}`}>
-        <Card className="w-full max-w-[45em] bg-red shadow-none border-0 border-b rounded-none border-foreground/30">
+        <Card className="w-[95vw] max-w-[42em] bg-red shadow-none border-0 border-b rounded-none border-foreground/30">
           <CardHeader className="flex flex-row items-center gap-2 mb-[0.5em]">
             <Avatar className="hover:cursor-pointer h-[2.8em] w-[2.8em]">
               <AvatarImage src={comment.user.profileImg} alt="profile image" />

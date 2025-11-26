@@ -114,21 +114,21 @@ export function LeftSidebar() {
 
   const items = [
     { title: "Home", url: "/home", icon: Home, color: getIncoColor("/home") },
-    {
-      title: "Oportunidade",
-      url: "/opportunity",
-      icon: Link,
-      color: getIncoColor("/opportunity"),
-    },
+    { title: "Notificações", url: "#", icon: Bell },
     {
       title: "Chat",
       url: "/chat",
       icon: MessageCircleMore,
       color: getIncoColor("/chat"),
     },
-    { title: "Pesquisar", url: "#", icon: SearchIcon },
-    { title: "Notificações", url: "#", icon: Bell },
     { title: "Criar Publicação", url: "#", icon: DiamondPlus },
+    {
+      title: "Oportunidade",
+      url: "/opportunity",
+      icon: Link,
+      color: getIncoColor("/opportunity"),
+    },
+    { title: "Pesquisar", url: "#", icon: SearchIcon },
     themeItem,
   ];
 

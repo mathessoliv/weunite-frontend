@@ -39,6 +39,16 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EditProfileProps {
   isOpen?: boolean;
@@ -369,11 +379,77 @@ export default function EditProfile({
                     control={form.control}
                     name="birthDate"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Data de Nascimento</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground",
+                                )}
+                              >
+                                {field.value ? (
+                                  format(
+                                    new Date(
+                                      new Date(field.value).getUTCFullYear(),
+                                      new Date(field.value).getUTCMonth(),
+                                      new Date(field.value).getUTCDate(),
+                                    ),
+                                    "dd/MM/yyyy",
+                                    { locale: ptBR },
+                                  )
+                                ) : (
+                                  <span>Selecione uma data</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            className="w-auto p-0"
+                            align="start"
+                          >
+                            <Calendar
+                              mode="single"
+                              selected={
+                                field.value
+                                  ? new Date(
+                                      new Date(field.value).getUTCFullYear(),
+                                      new Date(field.value).getUTCMonth(),
+                                      new Date(field.value).getUTCDate(),
+                                    )
+                                  : undefined
+                              }
+                              onSelect={(date) => {
+                                if (date) {
+                                  const year = date.getFullYear();
+                                  const month = String(
+                                    date.getMonth() + 1,
+                                  ).padStart(2, "0");
+                                  const day = String(date.getDate()).padStart(
+                                    2,
+                                    "0",
+                                  );
+                                  field.onChange(`${year}-${month}-${day}`);
+                                } else {
+                                  field.onChange("");
+                                }
+                              }}
+                              disabled={(date) =>
+                                date > new Date() ||
+                                date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                              locale={ptBR}
+                              captionLayout="dropdown"
+                              fromYear={1940}
+                              toYear={new Date().getFullYear()}
+                            />
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <FormMessage />
                       </FormItem>
                     )}

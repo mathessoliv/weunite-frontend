@@ -181,6 +181,10 @@ html::-webkit-scrollbar-thumb:hover {
   background-color: var(--third-hover);
 }
 
+.rdp-years_dropdown {
+  max-height: 2em;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
