@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useGetCommentsByUserId } from "@/state/useComments";
 import AboutProfile from "./AboutProfile";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import CompanyOpportunities from "./CompanyOpportunities";
 
 interface FeedProfileProps {
   profileUsername?: string;
@@ -19,6 +20,9 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
 
   const isOwnProfile = !profileUsername || profileUsername === user?.username;
   const displayUser = isOwnProfile ? user : profileUser;
+
+  // Verifica se o perfil é de uma empresa
+  const isCompanyProfile = displayUser?.role === "COMPANY";
 
   const { data } = useGetPosts();
 
@@ -57,6 +61,17 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
           <p className="">Comentários</p>
         </div>
 
+        {isCompanyProfile && (
+          <div
+            className={`w-full justify-center flex cursor-pointer py-2 ${
+              activeTab === "oportunidades" ? "border-b-2 border-primary" : ""
+            }`}
+            onClick={() => setActiveTab("oportunidades")}
+          >
+            <p className="">Oportunidades</p>
+          </div>
+        )}
+
         <div
           className={`w-full justify-center flex cursor-pointer py-2 ${
             activeTab === "Sobre" ? "border-b-2 border-primary" : ""
@@ -89,6 +104,10 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
             <p className="text-gray-500 mt-8">Nenhum comentário encontrado</p>
           )}
         </div>
+      )}
+
+      {activeTab === "oportunidades" && isCompanyProfile && displayUser?.id && (
+        <CompanyOpportunities companyId={Number(displayUser.id)} />
       )}
 
       {activeTab === "Sobre" && (

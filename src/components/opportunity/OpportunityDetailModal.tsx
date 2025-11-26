@@ -145,7 +145,7 @@ export default function OpportunityDetailModal({
               Veja todas as informações sobre esta oportunidade
             </SheetDescription>
           </SheetHeader>
-          <div className="overflow-y-auto max-h-[calc(92vh-160px)] sm:max-h-[calc(90vh-160px)] pr-2">
+          <div className="overflow-y-auto max-h-[calc(92vh-8rem)] py-4">
             <OpportunityContent />
           </div>
         </SheetContent>

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { Building2, Bookmark, UserCheck } from "lucide-react";
+import { Building2, UserCheck, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CreateOpportunity } from "@/components/opportunity/CreateOpportunity";
 import { useState } from "react";
@@ -27,24 +27,26 @@ export function HorizontalMenuOpportunity() {
         )}
 
         {user?.role === "ATHLETE" && (
-          <Button
-            variant="outline"
-            onClick={() => navigate("/opportunity/my-opportunities")}
-            className="flex-shrink-0 min-w-[14em] justify-center text-xs h-[2em] bg-gradient-to-r from-third to-green-500 hover:from-green-500 hover:to-emerald-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
-          >
-            <UserCheck className="h-4 w-4 text-white" />
-            <span className="font-medium">Minhas Candidaturas</span>
-          </Button>
-        )}
+          <>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/opportunity/my-opportunities")}
+              className="flex-shrink-0 min-w-[14em] justify-center text-xs h-[2em] bg-gradient-to-r from-third to-green-500 hover:from-green-500 hover:to-emerald-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              <UserCheck className="h-4 w-4 text-white" />
+              <span className="font-medium">Minhas Candidaturas</span>
+            </Button>
 
-        <Button
-          variant="outline"
-          onClick={() => navigate("/opportunity/saved")}
-          className="flex-shrink-0 min-w-[14em] justify-center text-xs h-[2em] bg-gradient-to-r from-third to-green-500 hover:from-green-500 hover:to-emerald-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
-        >
-          <Bookmark className="h-4 w-4 text-white" />
-          <span className="font-medium">Oportunidades Salvas</span>
-        </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/opportunity/saved")}
+              className="flex-shrink-0 min-w-[14em] justify-center text-xs h-[2em] bg-gradient-to-r from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              <Bookmark className="h-4 w-4 text-white" />
+              <span className="font-medium">Oportunidades Salvas</span>
+            </Button>
+          </>
+        )}
       </div>
 
       <CreateOpportunity open={isCreateOpen} onOpenChange={setIsCreateOpen} />

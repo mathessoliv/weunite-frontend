@@ -12,6 +12,9 @@ import {
   updateOpportunityRequest,
   checkIsSubscribedRequest,
   getAthleteSubscriptionsRequest,
+  toggleSavedOpportunityRequest,
+  getSavedOpportunitiesRequest,
+  checkIsSavedRequest,
 } from "@/api/services/opportunityService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -127,13 +130,12 @@ export const useGetOpportunities = () => {
 };
 
 export const useGetOpportunitySubscribers = (
-  companyId: number,
   opportunityId: number,
   enabled: boolean = true,
 ) => {
   return useQuery({
     queryKey: opportunityKeys.subscribers(opportunityId),
-    queryFn: () => getOpportunitySubscribersRequest(companyId, opportunityId),
+    queryFn: () => getOpportunitySubscribersRequest(opportunityId),
     enabled,
     staleTime: 2 * 60 * 1000,
     retry: 2,
@@ -197,5 +199,65 @@ export const useGetAthleteSubscriptions = (
     staleTime: 2 * 60 * 1000,
     retry: 2,
     enabled: options?.enabled ?? true,
+  });
+};
+
+// ========================================
+// SAVED OPPORTUNITIES HOOKS
+// ========================================
+
+export const useToggleSavedOpportunity = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      athleteId,
+      opportunityId,
+    }: {
+      athleteId: number;
+      opportunityId: number;
+    }) => toggleSavedOpportunityRequest(athleteId, opportunityId),
+    onSuccess: (data, variables) => {
+      // Invalida a lista de oportunidades salvas
+      queryClient.invalidateQueries({
+        queryKey: [...opportunityKeys.all, "savedOpportunities"],
+      });
+      // Invalida o status de salva para esta oportunidade
+      queryClient.invalidateQueries({
+        queryKey: [
+          ...opportunityKeys.all,
+          "isSaved",
+          variables.athleteId,
+          variables.opportunityId,
+        ],
+      });
+    },
+  });
+};
+
+export const useGetSavedOpportunities = (
+  athleteId: number,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: [...opportunityKeys.all, "savedOpportunities", athleteId],
+    queryFn: () => getSavedOpportunitiesRequest(athleteId),
+    staleTime: 2 * 60 * 1000,
+    retry: 2,
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useCheckIsSaved = (
+  athleteId: number,
+  opportunityId: number,
+  enabled: boolean = true,
+) => {
+  return useQuery({
+    queryKey: [...opportunityKeys.all, "isSaved", athleteId, opportunityId],
+    queryFn: () => checkIsSavedRequest(athleteId, opportunityId),
+    enabled,
+    staleTime: 1 * 60 * 1000,
+    retry: 2,
   });
 };
