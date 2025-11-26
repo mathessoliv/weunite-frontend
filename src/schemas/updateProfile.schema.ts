@@ -6,6 +6,11 @@ export const updateProfileSchema = z.object({
   bio: z.string().max(500, "Máximo 500 caracteres").optional(),
   media: z.instanceof(File).optional().nullable(),
   skills: z.array(z.string()).optional(),
+  height: z.coerce.number().optional(),
+  weight: z.coerce.number().optional(),
+  footDomain: z.string().optional(),
+  position: z.string().optional(),
+  birthDate: z.string().optional(),
 });
 
 export type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
