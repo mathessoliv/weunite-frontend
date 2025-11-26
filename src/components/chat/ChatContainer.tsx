@@ -8,9 +8,12 @@ import { useWebSocket } from "@/contexts/WebSocketContext";
 import {
   useGetConversationMessages,
   useMarkMessagesAsRead,
+  chatKeys,
 } from "@/state/useChat";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useChatStore } from "@/stores/useChatStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Conversation {
   id: number;
@@ -34,6 +37,11 @@ export const ChatContainer = ({
 }: ChatContainerProps) => {
   const userId = useAuthStore((state) => state.user?.id);
   const [isOtherTyping] = useState(false);
+  const queryClient = useQueryClient();
+  const shouldRefetchConversation = useChatStore(
+    (s) => s.shouldRefetchConversation,
+  );
+  const clearRefetchTrigger = useChatStore((s) => s.clearRefetchTrigger);
 
   // ✅ Hook para rastrear status online do outro usuário
   const isOtherUserOnline = useOnlineStatus(activeConversation?.otherUserId);
@@ -59,6 +67,29 @@ export const ChatContainer = ({
   const { isConnected, subscribeToConversation, sendMessage } = useWebSocket();
 
   const messages = messagesData?.success ? messagesData.data || [] : [];
+
+  // ✨ Efeito para fazer refetch quando trigger é ativado (vindo de notificação)
+  useEffect(() => {
+    if (shouldRefetchConversation && activeConversation?.id && userId) {
+      console.log(`🔄 Refetch ativado para conversa #${activeConversation.id}`);
+
+      queryClient.refetchQueries({
+        queryKey: chatKeys.messagesByConversation(
+          activeConversation.id,
+          Number(userId),
+        ),
+      });
+
+      // Limpa o trigger
+      clearRefetchTrigger();
+    }
+  }, [
+    shouldRefetchConversation,
+    activeConversation?.id,
+    userId,
+    queryClient,
+    clearRefetchTrigger,
+  ]);
 
   // ✅ Inscreve no WebSocket para receber mensagens em tempo real
   useEffect(() => {

@@ -1,0 +1,105 @@
+/* Sobrescreve o CSS do Driver.js para seguir o tema do site */
+
+/* Overlay (fundo escuro transparente) */
+.driver-overlay {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* Popover principal */
+.driver-popover {
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+  color: white !important;
+  border: 1px solid #16a34a !important;
+  border-radius: 0.5rem !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.3),
+    0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .driver-popover {
+  background: #16a34a !important;
+  background-color: #16a34a !important;
+}
+
+/* Título do popover */
+.driver-popover-title {
+  color: white !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+}
+
+/* Descrição do popover */
+.driver-popover-description {
+  color: white !important;
+  opacity: 0.9 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Botões */
+.driver-popover-footer button {
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.375rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+}
+
+/* Botão Next/Done */
+.driver-popover-next-btn {
+  background: white !important;
+  background-color: white !important;
+  color: #16a34a !important;
+  border: none !important;
+}
+
+.driver-popover-next-btn:hover {
+  opacity: 0.85 !important;
+}
+
+/* Botão Previous */
+.driver-popover-prev-btn {
+  background-color: transparent !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.driver-popover-prev-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Botão Close */
+.driver-popover-close-btn {
+  color: white !important;
+  background-color: transparent !important;
+  border: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 0.375rem !important;
+  opacity: 0.8 !important;
+}
+
+.driver-popover-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  opacity: 1 !important;
+}
+
+/* Progresso (texto "1 de 8") */
+.driver-popover-progress-text {
+  color: white !important;
+  opacity: 0.8 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Seta do popover */
+.driver-popover-arrow {
+  display: none !important;
+}
+
+/* Elemento destacado */
+.driver-active-element {
+  outline: 3px solid white !important;
+  outline-offset: 6px !important;
+  border-radius: 16px !important;
+}

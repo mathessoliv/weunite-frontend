@@ -10,9 +10,11 @@ import type { ReactNode } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import type { SendMessage } from "@/@types/chat.types";
+import type { Notification } from "@/@types/notification.types";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { chatKeys } from "@/state/useChat";
+import { notificationKeys } from "@/state/useNotifications";
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -26,6 +28,7 @@ interface WebSocketContextType {
     onStatusChange: (status: "ONLINE" | "OFFLINE") => void,
   ) => (() => void) | undefined;
   notifyOnlineStatus: (userId: number, status: "ONLINE" | "OFFLINE") => void;
+  subscribeToNotifications: (userId: number) => (() => void) | undefined;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -279,6 +282,60 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
+  // ✅ Inscreve-se para receber notificações em tempo real
+  const subscribeToNotifications = useCallback(
+    (userId: number) => {
+      if (!clientRef.current?.connected) {
+        console.warn("⚠️ WebSocket não conectado para notificações");
+        return;
+      }
+
+      const subscription = clientRef.current.subscribe(
+        `/topic/user/${userId}/notifications`,
+        (notificationFrame) => {
+          try {
+            const notification: Notification = JSON.parse(
+              notificationFrame.body,
+            );
+
+            // Atualiza a lista de notificações no cache
+            queryClient.setQueryData(
+              notificationKeys.list(userId),
+              (oldData: any) => {
+                if (!oldData?.success) return oldData;
+
+                const existingNotifications = oldData.data || [];
+
+                // Adiciona nova notificação no início da lista
+                return {
+                  ...oldData,
+                  data: [notification, ...existingNotifications],
+                };
+              },
+            );
+
+            // Força o refetch da lista de notificações
+            queryClient.invalidateQueries({
+              queryKey: notificationKeys.list(userId),
+            });
+
+            // Invalida o contador de não lidas
+            queryClient.invalidateQueries({
+              queryKey: notificationKeys.unreadCount(userId),
+            });
+          } catch (error) {
+            console.error("Erro ao processar notificação:", error);
+          }
+        },
+      );
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    },
+    [queryClient],
+  );
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -287,6 +344,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         sendMessage,
         subscribeToUserStatus,
         notifyOnlineStatus,
+        subscribeToNotifications,
       }}
     >
       {children}

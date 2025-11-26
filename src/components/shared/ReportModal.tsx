@@ -29,16 +29,34 @@ interface ReportModalProps {
   entityTitle?: string;
 }
 
-const REPORT_REASONS = [
+const POST_REPORT_REASONS = [
   { value: "spam", label: "Spam ou conteúdo enganoso" },
   { value: "harassment", label: "Assédio ou bullying" },
   { value: "inappropriate_content", label: "Conteúdo inadequado ou ofensivo" },
   { value: "fake_profile", label: "Perfil falso" },
-  { value: "fake_opportunity", label: "Oportunidade falsa" },
   { value: "copyright_violation", label: "Violação de direitos autorais" },
   { value: "violence", label: "Violência ou ameaças" },
   { value: "hate_speech", label: "Discurso de ódio" },
   { value: "misinformation", label: "Desinformação" },
+  { value: "other", label: "Outros" },
+];
+
+const OPPORTUNITY_REPORT_REASONS = [
+  { value: "fake_opportunity", label: "Oportunidade falsa ou fraudulenta" },
+  { value: "spam", label: "Spam ou conteúdo enganoso" },
+  { value: "inappropriate_content", label: "Conteúdo inadequado ou ofensivo" },
+  {
+    value: "misleading_information",
+    label: "Informações enganosas sobre a vaga",
+  },
+  {
+    value: "discrimination",
+    label: "Discriminação (gênero, raça, idade, etc)",
+  },
+  { value: "scam", label: "Golpe ou pedido de pagamento" },
+  { value: "unprofessional", label: "Conteúdo não profissional" },
+  { value: "duplicate", label: "Vaga duplicada" },
+  { value: "expired", label: "Oportunidade expirada ou já preenchida" },
   { value: "other", label: "Outros" },
 ];
 
@@ -53,6 +71,10 @@ export function ReportModal({
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const user = useAuthStore((state) => state.user);
+
+  // Seleciona os motivos baseado no tipo de entidade
+  const reportReasons =
+    entityType === "POST" ? POST_REPORT_REASONS : OPPORTUNITY_REPORT_REASONS;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,8 +121,9 @@ export function ReportModal({
             Denunciar {entityType === "POST" ? "Post" : "Oportunidade"}
           </DialogTitle>
           <DialogDescription>
-            Sua denúncia será analisada pela nossa equipe. Use este recurso
-            apenas para conteúdos que violem nossas diretrizes.
+            {entityType === "POST"
+              ? "Sua denúncia será analisada pela nossa equipe. Use este recurso apenas para conteúdos que violem nossas diretrizes da comunidade."
+              : "Sua denúncia será analisada pela nossa equipe. Ajude-nos a manter apenas oportunidades legítimas na plataforma."}
           </DialogDescription>
         </DialogHeader>
 
@@ -120,7 +143,7 @@ export function ReportModal({
                 <SelectValue placeholder="Selecione o motivo" />
               </SelectTrigger>
               <SelectContent>
-                {REPORT_REASONS.map((r) => (
+                {reportReasons.map((r) => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>

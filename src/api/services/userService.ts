@@ -12,6 +12,8 @@ export const updateUser = async (data: UpdateUser, username: string) => {
           name: data.name,
           username: data.username,
           email: data.email,
+          bio: data.bio,
+          skills: data.skills,
         }),
       ],
       {

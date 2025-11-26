@@ -4,7 +4,7 @@ import { AxiosError } from "axios";
 
 export const getDashboardStatsRequest = async () => {
   try {
-    const response = await axios.get<DashboardData>("/admin/dashboard/stats");
+    const response = await axios.get<DashboardData>("/admin/stats");
     return {
       success: true,
       data: response.data,
@@ -24,11 +24,11 @@ export const getDashboardStatsRequest = async () => {
   }
 };
 
-export const getMonthlyActivityRequest = async (months: number = 6) => {
+export const getMonthlyActivityRequest = async (months?: number) => {
   try {
-    const response = await axios.get(
-      `/admin/dashboard/activity?months=${months}`,
-    );
+    const response = await axios.get(`/admin/stats/monthly`, {
+      params: { months },
+    });
     return {
       success: true,
       data: response.data,
@@ -49,9 +49,7 @@ export const getMonthlyActivityRequest = async (months: number = 6) => {
 
 export const getOpportunitiesByCategoryRequest = async () => {
   try {
-    const response = await axios.get(
-      "/admin/dashboard/opportunities-by-category",
-    );
+    const response = await axios.get("/admin/stats/user-types");
     return {
       success: true,
       data: response.data,

@@ -24,10 +24,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, ChevronDownIcon } from "lucide-react";
+import { CalendarIcon, ChevronDownIcon, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import CreateSkill from "./skill/CreateSkill";
 import { SelectedSkills } from "./skill/SelectedSkills";
+import { toast } from "sonner";
 
 interface CreateOpportunityProps {
   open?: boolean;
@@ -54,25 +55,43 @@ export function CreateOpportunity({
   const createOpportunityMutation = useCreateOpportunity();
 
   async function onSubmit(values: z.infer<typeof createOpportunitySchema>) {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
 
-    const result = await createOpportunityMutation.mutateAsync({
-      data: {
-        ...values,
-        skills: values.skills.map((skillName, index) => ({
-          id: index + 1,
-          name: skillName,
-        })),
-      },
-      companyId: Number(user.id),
-    });
-    if (result.success) {
-      form.reset();
-      onOpenChange?.(false);
+    try {
+      const result = await createOpportunityMutation.mutateAsync({
+        data: {
+          ...values,
+          skills: values.skills.map((skillName, index) => ({
+            id: index + 1,
+            name: skillName,
+          })),
+        },
+        companyId: Number(user.id),
+      });
+
+      if (result.success) {
+        form.reset();
+        onOpenChange?.(false);
+        toast.success("Oportunidade criada com sucesso!");
+      } else {
+        toast.error(result.error || "Erro ao criar oportunidade");
+      }
+    } catch (error) {
+      toast.error("Erro inesperado ao criar oportunidade");
+      console.error("Erro ao criar oportunidade:", error);
     }
   }
 
   const isSubmitting = createOpportunityMutation.isPending;
+
+  // Observar o campo description para o contador
+  const descriptionValue = form.watch("description") || "";
+  const descriptionLength = descriptionValue.length;
+  const descriptionMinLength = 10;
+  const descriptionMaxLength = 500;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,39 +109,79 @@ export function CreateOpportunity({
         >
           <div className="grid gap-1">
             <Label htmlFor="opportunity-title" className="text-xs font-medium">
-              Título
+              Título <span className="text-destructive">*</span>
             </Label>
             <Controller
               name="title"
               control={form.control}
-              render={({ field }) => (
-                <Textarea
-                  id="opportunity-title"
-                  placeholder="Ex: Oportunidade para lateral esquerdo"
-                  className="min-h-[50px] resize-none text-sm"
-                  {...field}
-                />
+              render={({ field, fieldState }) => (
+                <>
+                  <Textarea
+                    id="opportunity-title"
+                    placeholder="Ex: Oportunidade para lateral esquerdo"
+                    className={cn(
+                      "min-h-[50px] resize-none text-sm",
+                      fieldState.error &&
+                        "border-destructive focus-visible:ring-destructive",
+                    )}
+                    {...field}
+                  />
+                  {fieldState.error && (
+                    <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{fieldState.error.message}</span>
+                    </div>
+                  )}
+                </>
               )}
             />
           </div>
 
           <div className="grid gap-1">
-            <Label
-              htmlFor="opportunity-description"
-              className="text-xs font-medium"
-            >
-              Descrição
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label
+                htmlFor="opportunity-description"
+                className="text-xs font-medium"
+              >
+                Descrição <span className="text-destructive">*</span>
+              </Label>
+              <span
+                className={cn(
+                  "text-xs",
+                  descriptionLength < descriptionMinLength
+                    ? "text-destructive"
+                    : descriptionLength > descriptionMaxLength
+                      ? "text-destructive"
+                      : "text-muted-foreground",
+                )}
+              >
+                {descriptionLength}/{descriptionMaxLength} caracteres
+                {descriptionLength < descriptionMinLength &&
+                  ` (mínimo: ${descriptionMinLength})`}
+              </span>
+            </div>
             <Controller
               name="description"
               control={form.control}
-              render={({ field }) => (
-                <Textarea
-                  id="opportunity-description"
-                  placeholder="Descreva a oportunidade..."
-                  className="min-h-[60px] resize-none text-sm"
-                  {...field}
-                />
+              render={({ field, fieldState }) => (
+                <>
+                  <Textarea
+                    id="opportunity-description"
+                    placeholder="Descreva a oportunidade... (mínimo 10 caracteres)"
+                    className={cn(
+                      "min-h-[80px] resize-none text-sm",
+                      fieldState.error &&
+                        "border-destructive focus-visible:ring-destructive",
+                    )}
+                    {...field}
+                  />
+                  {fieldState.error && (
+                    <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{fieldState.error.message}</span>
+                    </div>
+                  )}
+                </>
               )}
             />
           </div>
@@ -132,18 +191,30 @@ export function CreateOpportunity({
               htmlFor="opportunity-location"
               className="text-xs font-medium"
             >
-              Localização
+              Localização <span className="text-destructive">*</span>
             </Label>
             <Controller
               name="location"
               control={form.control}
-              render={({ field }) => (
-                <Input
-                  id="opportunity-location"
-                  placeholder="Ex: São Paulo, SP"
-                  className="h-8 text-sm"
-                  {...field}
-                />
+              render={({ field, fieldState }) => (
+                <>
+                  <Input
+                    id="opportunity-location"
+                    placeholder="Ex: São Paulo, SP"
+                    className={cn(
+                      "h-8 text-sm",
+                      fieldState.error &&
+                        "border-destructive focus-visible:ring-destructive",
+                    )}
+                    {...field}
+                  />
+                  {fieldState.error && (
+                    <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{fieldState.error.message}</span>
+                    </div>
+                  )}
+                </>
               )}
             />
           </div>
@@ -153,58 +224,68 @@ export function CreateOpportunity({
               htmlFor="opportunity-dateEnd"
               className="text-xs font-medium"
             >
-              Data limite
+              Data limite <span className="text-destructive">*</span>
             </Label>
             <Controller
               name="dateEnd"
               control={form.control}
-              render={({ field }) => (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-between text-left font-normal h-8 text-sm",
-                        !field.value && "text-muted-foreground",
-                      )}
-                    >
-                      <div className="flex items-center">
-                        <CalendarIcon className="mr-2 h-3 w-3" />
-                        {field.value ? (
-                          format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                        ) : (
-                          <span>Selecionar data</span>
+              render={({ field, fieldState }) => (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-between text-left font-normal h-8 text-sm",
+                          !field.value && "text-muted-foreground",
+                          fieldState.error &&
+                            "border-destructive focus-visible:ring-destructive",
                         )}
-                      </div>
-                      <ChevronDownIcon className="h-3 w-3 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date < new Date(new Date().setHours(0, 0, 0, 0))
-                      }
-                      fixedWeeks={true}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      >
+                        <div className="flex items-center">
+                          <CalendarIcon className="mr-2 h-3 w-3" />
+                          {field.value ? (
+                            format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecionar data</span>
+                          )}
+                        </div>
+                        <ChevronDownIcon className="h-3 w-3 opacity-50" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
+                        fixedWeeks={true}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {fieldState.error && (
+                    <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{fieldState.error.message}</span>
+                    </div>
+                  )}
+                </>
               )}
             />
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="opportunity-skills" className="text-xs font-medium">
-              Habilidades
+              Habilidades <span className="text-destructive">*</span>
             </Label>
             <Controller
               name="skills"
               control={form.control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <>
                   <CreateSkill
                     selectedSkills={field.value}
@@ -222,6 +303,12 @@ export function CreateOpportunity({
                       }}
                       className="mt-2"
                     />
+                  )}
+                  {fieldState.error && (
+                    <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{fieldState.error.message}</span>
+                    </div>
                   )}
                 </>
               )}

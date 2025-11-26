@@ -24,6 +24,7 @@ export interface Post {
   id: string;
   text: string;
   imageUrl: string | null;
+  videoUrl?: string | null;
   likes: Like[];
   comments: Comment[];
   createdAt: string;

@@ -10,6 +10,7 @@ import {
   Moon,
   Sun,
   Shield,
+  Bell,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,6 +35,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Search } from "@/components/shared/Search";
 import { CreatePost } from "../post/CreatePost";
+import { NotificationPanel } from "@/components/notification/NotificationPanel";
 import { useTheme } from "@/components/ThemeProvider";
 import { useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -43,28 +45,28 @@ import { useEffect } from "react";
 import { useBreakpoints } from "@/hooks/useBreakpoints";
 import { getInitials } from "@/utils/getInitials";
 
+import { useGetUnreadCount } from "@/state/useNotifications";
+import { useWebSocket } from "@/contexts/WebSocketContext";
+
 export function LeftSidebar() {
   const { state, setOpen } = useSidebar();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   const { logout } = useAuthStore();
   const { user } = useAuthStore();
   const initials = getInitials(user?.username);
 
-  // Lista temporária de emails de administradores
-  const ADMIN_EMAILS = [
-    "admin@weunite.com",
-    "luiz@weunite.com",
-    "matheus@weunite.com",
-    "matheusoliveirale2007@gmail.com",
-    "mathessoliv@gmail.com",
-    "manoel_jonathan@hotmail.com",
-  ];
+  const userId = user?.id;
+  const { subscribeToNotifications } = useWebSocket();
 
-  // Verifica se o usuário é administrador
-  const isAdmin =
-    user?.isAdmin || (user?.email && ADMIN_EMAILS.includes(user.email));
+  const { data: unreadCountData } = useGetUnreadCount(Number(userId) || 0);
+  const unreadCount = unreadCountData?.success
+    ? unreadCountData.data?.unreadCount || 0
+    : 0;
+
+  const isAdmin = user?.role === "admin".toUpperCase();
 
   const { setTheme, theme } = useTheme();
   const themeIcon = theme === "dark" ? Sun : Moon;
@@ -83,7 +85,16 @@ export function LeftSidebar() {
     if (state === "expanded") {
       setOpen(false);
     }
+    setIsNotificationsOpen(false); // Fecha notificações ao abrir pesquisa
     setIsSearchOpen(true);
+  };
+
+  const handleNotificationsOpen = () => {
+    if (state === "expanded") {
+      setOpen(false);
+    }
+    setIsSearchOpen(false); // Fecha pesquisa ao abrir notificações
+    setIsNotificationsOpen(true);
   };
 
   const handleCreatePostOpen = () => {
@@ -116,6 +127,7 @@ export function LeftSidebar() {
       color: getIncoColor("/chat"),
     },
     { title: "Pesquisar", url: "#", icon: SearchIcon },
+    { title: "Notificações", url: "#", icon: Bell },
     { title: "Criar Publicação", url: "#", icon: DiamondPlus },
     themeItem,
   ];
@@ -125,6 +137,17 @@ export function LeftSidebar() {
       setOpen(false);
     }
   }, [isSearchOpen, state, setOpen]);
+
+  // Subscribe to WebSocket notifications
+  useEffect(() => {
+    if (!userId) return;
+
+    const unsubscribe = subscribeToNotifications(Number(userId));
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [userId, subscribeToNotifications]);
 
   useEffect(() => {
     if (isSmallDesktop && !previsDesktop.current) {
@@ -151,6 +174,10 @@ export function LeftSidebar() {
   return (
     <>
       <Search isOpen={isSearchOpen} onOpenChange={setIsSearchOpen} />
+      <NotificationPanel
+        isOpen={isNotificationsOpen}
+        onOpenChange={setIsNotificationsOpen}
+      />
       <CreatePost open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen} />
 
       <Sidebar collapsible="icon">
@@ -161,7 +188,7 @@ export function LeftSidebar() {
               `}
           >
             {state === "collapsed" || isMobile ? (
-              <div className="flex items-center justify-center w-full py-4">
+              <div className="flex items-center justify-center w-full py-4 gap-2">
                 <span className="font-bold text-xl text-primary">W</span>
                 <CustomSidebarTrigger className="p-0 m-0" />
               </div>
@@ -215,6 +242,8 @@ export function LeftSidebar() {
                           setTheme(theme === "dark" ? "light" : "dark");
                         } else if (item.title === "Pesquisar") {
                           handleSearchOpen();
+                        } else if (item.title === "Notificações") {
+                          handleNotificationsOpen();
                         } else if (item.title === "Criar Publicação") {
                           handleCreatePostOpen();
                         } else if (item.url !== "#") {
@@ -226,11 +255,22 @@ export function LeftSidebar() {
                           ? "justify-center w-full py-2"
                           : "items-center gap-2"
                       }`}
+                      data-tour={
+                        item.title === "Home"
+                          ? "home"
+                          : item.title === "Oportunidade"
+                            ? "opportunities"
+                            : item.title === "Chat"
+                              ? "messages"
+                              : item.title === "Criar Publicação"
+                                ? "create-post"
+                                : undefined
+                      }
                     >
                       <div
-                        className={
+                        className={`relative ${
                           state === "collapsed" ? "flex justify-center" : ""
-                        }
+                        }`}
                       >
                         <item.icon
                           style={{
@@ -242,6 +282,11 @@ export function LeftSidebar() {
                                 : "currentColor",
                           }}
                         />
+                        {item.title === "Notificações" && unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-semibold">
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </span>
+                        )}
                       </div>
                       {state !== "collapsed" && (
                         <span
@@ -304,34 +349,35 @@ export function LeftSidebar() {
                     <DropdownMenuItem
                       className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
                       onClick={() => navigate("/profile")}
+                      data-tour="profile"
                     >
                       <User className="h-4 w-4 text-gray-500" />
                       <p>Perfil</p>
                     </DropdownMenuItem>
-
-                    {isAdmin && (
-                      <DropdownMenuItem
-                        className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors text-blue-600"
-                        onClick={() => {
-                          console.log("Clicou no Painel Admin!", {
-                            isAdmin,
-                            userEmail: user?.email,
-                          });
-                          console.log("Navegando para /admin...");
-                          navigate("/admin");
-                          console.log("Navigate executado!");
-                        }}
-                      >
-                        <Shield className="h-4 w-4 text-blue-500" />
-                        <p>Painel Admin</p>
-                      </DropdownMenuItem>
-                    )}
 
                     <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
                       <Settings className="h-4 w-4 text-gray-500" />
                       <p>Configurações</p>
                     </DropdownMenuItem>
                   </div>
+
+                  {isAdmin && (
+                    <DropdownMenuItem
+                      className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors text-blue-600"
+                      onClick={() => {
+                        console.log("Clicou no Painel Admin!", {
+                          isAdmin,
+                          userEmail: user?.email,
+                        });
+                        console.log("Navegando para /admin...");
+                        navigate("/admin");
+                        console.log("Navigate executado!");
+                      }}
+                    >
+                      <Shield className="h-4 w-4 text-blue-500" />
+                      <p>Painel Admin</p>
+                    </DropdownMenuItem>
+                  )}
 
                   <div className="h-px bg-gray-100 my-1"></div>
                   <DropdownMenuItem

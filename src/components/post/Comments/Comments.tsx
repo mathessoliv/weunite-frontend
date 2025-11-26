@@ -75,7 +75,10 @@ export default function Comments({
             <DrawerTitle>Comentários</DrawerTitle>
           </DrawerHeader>
 
-          <div className="flex flex-col w-full items-center overflow-y-auto scrollbar-thumb">
+          <div
+            id={`comments-list-${post.id}`}
+            className="flex flex-col w-full items-center overflow-y-auto scrollbar-thumb"
+          >
             <Post post={post} />
 
             <div className="w-full max-w-[45em] border-y border-foreground/30 px-4 py-3 flex gap-4">
@@ -167,7 +170,10 @@ export default function Comments({
               </div>
             </div>
 
-            <div className="flex-1 max-h-[66vh] overflow-y-auto -mt-5 p-4 custom-scrollbar">
+            <div
+              id={`comments-list-${post.id}`}
+              className="flex-1 max-h-[66vh] overflow-y-auto -mt-5 p-4 custom-scrollbar"
+            >
               <div className="space-y-4">
                 {comments?.map((comment: CommentType) => (
                   <Comment key={comment.id} comment={comment} />

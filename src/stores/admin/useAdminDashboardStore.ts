@@ -10,6 +10,12 @@ import type {
 } from "@/@types/admin/dashboard.types";
 import { create } from "zustand";
 
+/**
+ * @deprecated Use useAdminDashboard hook em src/state/useAdminDashboard.ts
+ *
+ * Este store foi mantido para compatibilidade com código legado.
+ * Prefira usar os hooks React Query para novo código.
+ */
 interface DashboardState {
   dashboardData: DashboardData | null;
   monthlyActivity: MonthlyActivity[];

@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { FileText, Flag, Heart, Search, Image, Loader2 } from "lucide-react";
-import type { Report, ReportedPost } from "@/@types/report.types";
+import type { Report, ReportedPost } from "@/@types/admin.types";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
   getReportedPostsDetailsRequest,
@@ -74,6 +74,7 @@ export function ReportedPostsPage() {
         username: firstReport.reporter.username,
       },
       reportedUser: {
+        id: reportedPost.post.user.id, // ID do usuário denunciado (dono do post)
         name: reportedPost.post.user.name,
         username: reportedPost.post.user.username,
       },
@@ -288,8 +289,8 @@ export function ReportedPostsPage() {
                     filteredPosts.map((reportedPost) => (
                       <TableRow key={reportedPost.post.id}>
                         <TableCell className="max-w-md">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                          <div className="space-y-1 ">
+                            <div className="flex items-center gap-2 ">
                               <span className="font-medium text-sm">
                                 {reportedPost.post.user.name}
                               </span>
@@ -298,7 +299,7 @@ export function ReportedPostsPage() {
                               {reportedPost.post.text}
                             </p>
                             {reportedPost.post.imageUrl && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground ">
                                 <Image className="h-3 w-3" />
                                 <span>Com mídia</span>
                               </div>
@@ -311,8 +312,8 @@ export function ReportedPostsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1 text-xs">
-                            <div className="flex items-center gap-1">
+                          <div className="flex flex-col gap-1 text-xs ">
+                            <div className="flex items-center gap-1 ">
                               <Heart className="h-3 w-3 text-red-500" />
                               <span>
                                 {reportedPost.post.likes?.length || 0}
@@ -348,7 +349,7 @@ export function ReportedPostsPage() {
                           {getTimeAgoSimple(reportedPost.post.createdAt)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
+                          <div className="flex gap-2 justify-end ">
                             <Button
                               variant="outline"
                               size="sm"

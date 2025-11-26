@@ -30,7 +30,6 @@ export function OpportunitySubscribersPage() {
   // Buscar candidatos da oportunidade
   const { data: subscribersData, isLoading: isLoadingSubscribers } =
     useGetOpportunitySubscribers(
-      Number(user?.id),
       Number(opportunityId),
       !!user?.id && !!opportunityId,
     );

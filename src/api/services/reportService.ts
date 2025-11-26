@@ -1,12 +1,6 @@
 import { instance as axios } from "../axios";
 import type { AxiosError } from "axios";
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T | null;
-  message: string | null;
-  error: string | null;
-}
+import type { ApiResponse } from "@/types/api.types";
 
 interface CreateReportRequest {
   type: "POST" | "OPPORTUNITY";
@@ -81,6 +75,62 @@ export const getPendingReportsRequest = async (): Promise<
       message: null,
       error:
         error.response?.data?.message || "Erro ao carregar denúncias pendentes",
+    };
+  }
+};
+
+/**
+ * Busca todas as denúncias (incluindo concluídas)
+ */
+export const getAllReportsRequest = async (): Promise<
+  ApiResponse<ReportResponse[]>
+> => {
+  try {
+    const response = await axios.get("/reports/all");
+
+    return {
+      success: true,
+      data: response.data,
+      message: null,
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao carregar denúncias",
+    };
+  }
+};
+
+/**
+ * Busca denúncias por status
+ */
+export const getReportsByStatusRequest = async (
+  status: string,
+): Promise<ApiResponse<ReportResponse[]>> => {
+  try {
+    const response = await axios.get(`/reports/status/${status}`);
+
+    return {
+      success: true,
+      data: response.data,
+      message: null,
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar denúncias por status",
     };
   }
 };

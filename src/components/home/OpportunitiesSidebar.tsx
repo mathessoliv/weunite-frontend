@@ -171,7 +171,20 @@ export const OpportunitiesSidebar: React.FC = () => {
               Sugestões de oportunidade
             </h2>
           </div>
-          <div className="flex-1 h-full overflow-y-auto pointer-events-auto">
+          <div
+            className="flex-1 h-full overflow-y-auto pointer-events-auto no-scrollbar"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
+          >
+            <style>
+              {`
+              .no-scrollbar::-webkit-scrollbar {
+              display: none;
+            } 
+              `}
+            </style>
             <OpportunitiesContent />
           </div>
         </div>

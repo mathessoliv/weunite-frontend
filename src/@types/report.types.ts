@@ -33,6 +33,16 @@ export type ReportReason =
 export type ReportEntityType = "post" | "user" | "opportunity" | "comment";
 
 /**
+ * Ação tomada em uma denúncia
+ */
+export type ActionTaken =
+  | "none"
+  | "content_removed"
+  | "user_warned"
+  | "user_suspended"
+  | "user_banned";
+
+/**
  * Interface base para uma denúncia
  */
 export interface Report {
@@ -44,12 +54,16 @@ export interface Report {
     username: string;
   };
   reportedUser: {
+    id?: string;
     name: string;
     username: string;
   };
   reason: ReportReason;
   description: string;
   status: ReportStatus;
+  actionTaken?: ActionTaken;
+  resolvedByAdminId?: number;
+  resolvedAt?: string;
   createdAt: string;
   content: string;
   imageUrl?: string;

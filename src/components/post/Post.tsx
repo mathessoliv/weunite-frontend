@@ -49,12 +49,18 @@ import Comments from "./Comments/Comments";
 import { getInitials } from "@/utils/getInitials";
 import { useNavigate } from "react-router-dom";
 import { ReportModal } from "../shared/ReportModal";
+import VideoPlayer from "./VideoPlayer";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
 
 export default function Post({ post }: { post: Post }) {
   const initials = getInitials(post.user.name);
 
+  const isVerticalVideo = !!(
+    post.videoUrl &&
+    post.videoUrl.includes("375") &&
+    post.videoUrl.includes("500")
+  );
   const { user } = useAuthStore();
 
   const toggleLike = useToggleLike();
@@ -240,14 +246,23 @@ export default function Post({ post }: { post: Post }) {
         </CardHeader>
 
         <CardContent className="w-full mt-[-18px]">
-          <div className="w-full flex justify-center items-center">
-            {post.imageUrl && (
+          <div className="w-full flex flex-col gap-3">
+            {/* ✅ Container de mídia com altura máxima controlada */}
+            {post.videoUrl ? (
+              <div className="w-full rounded-sm overflow-hidden bg-black">
+                <VideoPlayer
+                  src={post.videoUrl}
+                  thumbnail={post.imageUrl || undefined}
+                  isVertical={isVerticalVideo}
+                />
+              </div>
+            ) : post.imageUrl ? (
               <img
                 src={post.imageUrl}
                 alt="Post media"
-                className="rounded-sm mb-2"
+                className="rounded-sm w-full max-h-[500px] object-cover"
               />
-            )}
+            ) : null}
           </div>
 
           <p className="">{post.text}</p>

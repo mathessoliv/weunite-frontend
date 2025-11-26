@@ -64,6 +64,17 @@ export function BottomSideBar() {
               }}
               className="flex flex-col items-center justify-center w-full py-2 relative"
               aria-label={item.title}
+              data-tour={
+                item.title === "Home"
+                  ? "home"
+                  : item.title === "Oportunidade"
+                    ? "opportunities"
+                    : item.title === "Chat"
+                      ? "messages"
+                      : item.title === "Criar Publicação"
+                        ? "create-post"
+                        : undefined
+              }
             >
               <item.icon
                 size={24}
@@ -98,6 +109,7 @@ export function BottomSideBar() {
               <DropdownMenuItem
                 onClick={() => navigate("/profile")}
                 className="cursor-pointer text-third"
+                data-tour="profile"
               >
                 Perfil
               </DropdownMenuItem>

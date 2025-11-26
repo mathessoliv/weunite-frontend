@@ -16,6 +16,7 @@ import { Skeleton } from "../ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { getInitials } from "@/utils/getInitials";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { NotificationBell } from "@/components/notification/NotificationBell";
 
 export function HeaderMobile() {
   const { setTheme, theme } = useTheme();
@@ -52,6 +53,8 @@ export function HeaderMobile() {
           </div>
 
           <div className="flex items-center gap-4 mr-6">
+            <NotificationBell />
+
             {items.map((item) => (
               <button
                 key={item.title}

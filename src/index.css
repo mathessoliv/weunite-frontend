@@ -153,6 +153,16 @@ html::-webkit-scrollbar-thumb:hover {
   border: 2px solid transparent;
 }
 
+/* scrollbar completamente invisível */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE e Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 /* scrollbar verde */
 .scrollbar-thumb::-webkit-scrollbar {
   width: 8px;

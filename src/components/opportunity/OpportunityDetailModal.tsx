@@ -40,35 +40,45 @@ export default function OpportunityDetailModal({
   };
 
   const OpportunityContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Título e Empresa */}
-      <div>
-        <h3 className="text-2xl font-bold mb-2">{opportunity.title}</h3>
+      <div className="space-y-3 pb-4 border-b">
+        <h3 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+          {opportunity.title}
+        </h3>
         {opportunity.company && (
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Briefcase className="w-4 h-4" />
-            <span className="text-sm">{opportunity.company.name}</span>
+            <Briefcase className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm font-medium">
+              {opportunity.company.name}
+            </span>
           </div>
         )}
       </div>
 
       {/* Informações principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {opportunity.location && (
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+          <div className="flex items-start gap-3 p-3 sm:p-4 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
             <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Localização</p>
-              <p className="text-sm font-medium">{opportunity.location}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground mb-1 font-medium">
+                Localização
+              </p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {opportunity.location}
+              </p>
             </div>
           </div>
         )}
 
-        <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+        <div className="flex items-start gap-3 p-3 sm:p-4 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
           <Calendar className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Data Limite</p>
-            <p className="text-sm font-medium">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground mb-1 font-medium">
+              Data Limite
+            </p>
+            <p className="text-sm font-semibold text-foreground">
               {format(new Date(opportunity.dateEnd), "dd 'de' MMMM 'de' yyyy", {
                 locale: ptBR,
               })}
@@ -78,27 +88,27 @@ export default function OpportunityDetailModal({
       </div>
 
       {/* Descrição */}
-      <div>
-        <h4 className="font-semibold mb-2 flex items-center gap-2">
-          <span>Descrição</span>
+      <div className="space-y-3">
+        <h4 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+          Descrição da Oportunidade
         </h4>
-        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-line">
           {opportunity.description}
         </p>
       </div>
 
       {/* Habilidades */}
       {opportunity.skills && opportunity.skills.length > 0 && (
-        <div>
-          <h4 className="font-semibold mb-3 flex items-center gap-2">
-            <Tag className="w-4 h-4" />
+        <div className="space-y-3">
+          <h4 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+            <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>Habilidades Requeridas</span>
           </h4>
           <div className="flex flex-wrap gap-2">
             {opportunity.skills.map((skill) => (
               <span
                 key={skill.id}
-                className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                className="px-3 py-1.5 sm:py-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs sm:text-sm font-medium transition-colors"
               >
                 {skill.name}
               </span>
@@ -108,8 +118,12 @@ export default function OpportunityDetailModal({
       )}
 
       {/* Botão de ação */}
-      <div className="pt-4">
-        <Button onClick={handleGoToOpportunity} className="w-full" size="lg">
+      <div className="pt-2 sm:pt-4">
+        <Button
+          onClick={handleGoToOpportunity}
+          className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold"
+          size="lg"
+        >
           Ir para Oportunidade
         </Button>
       </div>
@@ -119,14 +133,19 @@ export default function OpportunityDetailModal({
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh]">
-          <SheetHeader className="text-left mb-6">
-            <SheetTitle>Detalhes da Oportunidade</SheetTitle>
-            <SheetDescription>
+        <SheetContent
+          side="bottom"
+          className="h-[92vh] sm:h-[90vh] px-4 sm:px-6"
+        >
+          <SheetHeader className="text-left mb-4 sm:mb-6 pb-4 border-b">
+            <SheetTitle className="text-2xl sm:text-3xl font-bold text-foreground">
+              Detalhes da Oportunidade
+            </SheetTitle>
+            <SheetDescription className="text-sm sm:text-base text-muted-foreground mt-2">
               Veja todas as informações sobre esta oportunidade
             </SheetDescription>
           </SheetHeader>
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)] pr-2">
+          <div className="overflow-y-auto max-h-[calc(92vh-160px)] sm:max-h-[calc(90vh-160px)] pr-2">
             <OpportunityContent />
           </div>
         </SheetContent>
@@ -136,14 +155,18 @@ export default function OpportunityDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Detalhes da Oportunidade</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-5 sm:pt-6 pb-4 border-b">
+          <DialogTitle className="text-2xl sm:text-3xl font-bold text-foreground">
+            Detalhes da Oportunidade
+          </DialogTitle>
+          <DialogDescription className="text-sm sm:text-base text-muted-foreground mt-2">
             Veja todas as informações sobre esta oportunidade
           </DialogDescription>
         </DialogHeader>
-        <OpportunityContent />
+        <div className="overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 flex-1">
+          <OpportunityContent />
+        </div>
       </DialogContent>
     </Dialog>
   );

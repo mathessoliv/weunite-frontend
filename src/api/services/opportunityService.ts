@@ -149,7 +149,6 @@ export const getOpportunitiesRequest = async () => {
 };
 
 export const getOpportunitySubscribersRequest = async (
-  companyId: number,
   opportunityId: number,
 ) => {
   try {
@@ -221,6 +220,27 @@ export const checkIsSubscribedRequest = async (
       error:
         error.response?.data?.message ||
         "Erro ao verificar status da candidatura",
+    };
+  }
+};
+
+export const getAthleteSubscriptionsRequest = async (athleteId: number) => {
+  try {
+    const response = await axios.get(`/subscriber/athlete/${athleteId}`);
+    return {
+      success: true,
+      data: response.data, // Backend retorna List<SubscriberDTO> diretamente
+      message: "Candidaturas carregadas com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message || "Erro ao carregar as candidaturas",
     };
   }
 };

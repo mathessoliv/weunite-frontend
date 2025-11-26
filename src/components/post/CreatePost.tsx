@@ -103,13 +103,7 @@ export function CreatePost({ open, onOpenChange }: CreatePostProps) {
                 Cancelar
               </Button>
             </DialogClose>
-            <Button
-              type="submit"
-              className="bg-third hover:bg-third hover:cursor-pointer"
-              disabled={createPostMutation.isPending}
-            >
-              {createPostMutation.isPending ? "Publicando..." : "Publicar"}
-            </Button>
+
             <Button
               type="submit"
               className="variant-third bg-third hover:bg-third-hover"

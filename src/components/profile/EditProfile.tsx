@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +28,9 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import CreateSkill from "../opportunity/skill/CreateSkill";
+import { SelectedSkills } from "../opportunity/skill/SelectedSkills";
+import { Controller } from "react-hook-form";
 
 interface EditProfileProps {
   isOpen?: boolean;
@@ -47,7 +51,10 @@ export default function EditProfile({
     defaultValues: {
       name: user?.name,
       username: user?.username,
+      bio: user?.bio || "",
       media: null,
+      skills:
+        user?.skills?.map((s) => (typeof s === "string" ? s : s.name)) || [],
     },
   });
 
@@ -67,11 +74,19 @@ export default function EditProfile({
   async function onSubmit(values: UpdateProfileForm) {
     if (!user?.id) return;
 
+    const skillsToSend =
+      values.skills?.map((skillName, index) => ({
+        id: index + 1,
+        name: skillName,
+      })) || [];
+
     const result = await editProfile.mutateAsync({
       data: {
         name: values.name.trim(),
         username: values.username.trim(),
+        bio: values.bio?.trim(),
         profileImg: values?.media || undefined,
+        skills: skillsToSend,
       },
       username: user.username,
     });
@@ -172,6 +187,58 @@ export default function EditProfile({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem className="grid gap-3">
+                    <FormLabel htmlFor="bio">Bio</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="bio"
+                        placeholder="Conte um pouco sobre você..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {user?.role?.toUpperCase() === "ATHLETE" && (
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Habilidades</label>
+                  <Controller
+                    name="skills"
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <CreateSkill
+                          selectedSkills={field.value || []}
+                          onSkillsChange={field.onChange}
+                        />
+                        {(field.value?.length || 0) > 0 && (
+                          <SelectedSkills
+                            skills={field.value || []}
+                            showRemove={true}
+                            onRemoveSkill={(skillToRemove) => {
+                              const currentSkills = field.value || [];
+                              field.onChange(
+                                currentSkills.filter(
+                                  (s) => s !== skillToRemove,
+                                ),
+                              );
+                            }}
+                            className="mt-2"
+                          />
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+              )}
             </div>
 
             <DialogFooter className="flex flex-row-reverse gap-2 mt-4">

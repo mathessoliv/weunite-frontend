@@ -8,15 +8,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle, XCircle, AlertTriangle, User } from "lucide-react";
+import {
+  XCircle,
+  AlertTriangle,
+  User,
+  ShieldAlert,
+  ShieldBan,
+} from "lucide-react";
 import type { Report } from "@/@types/admin.types";
 import { toast } from "sonner";
 import {
   markReportsAsReviewedRequest,
-  resolveReportsRequest,
   dismissReportsRequest,
+  banUserRequest,
+  suspendUserRequest,
 } from "@/api/services/adminService";
 import { useState } from "react";
+import { getReportReasonText } from "@/utils/adminBadges";
+import { SuspendUserDialog } from "./SuspendUserDialog";
+import { BanUserConfirmDialog } from "./BanUserConfirmDialog";
 
 interface ReportDetailsModalProps {
   isOpen: boolean;
@@ -35,39 +45,70 @@ export function ReportDetailsModal({
   onActionComplete,
 }: ReportDetailsModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false);
+  const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
 
   if (!report) return null;
 
-  const getReasonText = (reason: string) => {
-    const reasonMap: Record<string, string> = {
-      spam: "Spam",
-      harassment: "Assédio",
-      inappropriate_content: "Conteúdo Inadequado",
-      fake_profile: "Perfil Falso",
-      fake_opportunity: "Oportunidade Falsa",
-      copyright_violation: "Violação de Direitos",
-      other: "Outros",
-    };
-    return reasonMap[reason] || reason;
-  };
+  // TODO: Pegar o admin ID do contexto de autenticação
+  const adminId = 1; // Temporário - substituir por ID real do admin logado
 
-  const handleResolve = async () => {
+  const handleSuspendUser = async (durationInDays: number, reason: string) => {
+    const reportedUserWithId = report.reportedUser as any;
+    const userId = reportedUserWithId.id;
+
+    if (!userId) {
+      toast.error("Não foi possível identificar o ID do usuário denunciado");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Usar o entityId do report (ID do post/opportunity)
-    const entityId = report.entityId;
-    const type = report.entityType;
-
-    const response = await resolveReportsRequest(entityId, type);
+    const response = await suspendUserRequest({
+      userId: Number(userId),
+      adminId,
+      durationInDays,
+      reason,
+      reportId: parseInt(report.id),
+    });
 
     setIsLoading(false);
 
     if (response.success) {
-      toast.success(response.message || "Denúncia resolvida com sucesso!");
+      toast.success(response.message || "Usuário suspenso com sucesso!");
       onOpenChange(false);
       onActionComplete?.();
     } else {
-      toast.error(response.error || "Erro ao resolver denúncia");
+      toast.error(response.error || "Erro ao suspender usuário");
+    }
+  };
+
+  const handleBanUser = async (reason: string) => {
+    const reportedUserWithId = report.reportedUser as any;
+    const userId = reportedUserWithId.id;
+
+    if (!userId) {
+      toast.error("Não foi possível identificar o ID do usuário denunciado");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const response = await banUserRequest({
+      userId: Number(userId),
+      adminId,
+      reason,
+      reportId: parseInt(report.id),
+    });
+
+    setIsLoading(false);
+
+    if (response.success) {
+      toast.success(response.message || "Usuário banido com sucesso!");
+      onOpenChange(false);
+      onActionComplete?.();
+    } else {
+      toast.error(response.error || "Erro ao banir usuário");
     }
   };
 
@@ -111,7 +152,7 @@ export function ReportDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto scrollbar-thumb">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-xl">Detalhes da Denúncia</DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -176,7 +217,7 @@ export function ReportDetailsModal({
             <div>
               <h4 className="text-sm font-medium mb-2">Motivo</h4>
               <Badge variant="outline" className="text-sm">
-                {getReasonText(report.reason)}
+                {getReportReasonText(report.reason)}
               </Badge>
             </div>
 
@@ -235,6 +276,7 @@ export function ReportDetailsModal({
           <div>
             <h4 className="text-sm font-medium mb-3">Ações de Moderação</h4>
             <div className="space-y-2">
+              {/* Marcar como em análise */}
               {report.status === "pending" && (
                 <Button
                   variant="outline"
@@ -246,28 +288,66 @@ export function ReportDetailsModal({
                   {isLoading ? "Processando..." : "Marcar como Em Análise"}
                 </Button>
               )}
+
+              {/* Rejeitar denúncia (denúncia falsa) */}
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 hover:bg-green-50 hover:text-green-600 hover:border-green-200 dark:hover:bg-green-950/20"
-                onClick={handleResolve}
-                disabled={isLoading}
-              >
-                <CheckCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Resolver Denúncia"}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/20"
+                className="w-full justify-start gap-2 hover:bg-gray-50 hover:text-gray-600 hover:border-gray-200 dark:hover:bg-gray-950/20"
                 onClick={handleReject}
                 disabled={isLoading}
               >
                 <XCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Rejeitar Denúncia"}
+                {isLoading ? "Processando..." : "Rejeitar Denúncia (Falsa)"}
+              </Button>
+
+              <div className="my-2 border-t pt-2">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Ações com punição ao usuário:
+                </p>
+              </div>
+
+              {/* Suspender usuário */}
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200 dark:hover:bg-orange-950/20"
+                onClick={() => setIsSuspendDialogOpen(true)}
+                disabled={isLoading}
+              >
+                <ShieldAlert className="h-4 w-4" />
+                {isLoading
+                  ? "Processando..."
+                  : "Suspender Usuário (Temporário)"}
+              </Button>
+
+              {/* Banir usuário */}
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2 hover:bg-red-50 hover:text-red-700 hover:border-red-200 dark:hover:bg-red-950/20"
+                onClick={() => setIsBanDialogOpen(true)}
+                disabled={isLoading}
+              >
+                <ShieldBan className="h-4 w-4" />
+                {isLoading ? "Processando..." : "Banir Usuário (Permanente)"}
               </Button>
             </div>
           </div>
         </div>
       </DialogContent>
+
+      {/* Dialogs de confirmação */}
+      <SuspendUserDialog
+        isOpen={isSuspendDialogOpen}
+        onOpenChange={setIsSuspendDialogOpen}
+        onConfirm={handleSuspendUser}
+        username={report.reportedUser.username}
+      />
+
+      <BanUserConfirmDialog
+        isOpen={isBanDialogOpen}
+        onOpenChange={setIsBanDialogOpen}
+        onConfirm={handleBanUser}
+        username={report.reportedUser.username}
+      />
     </Dialog>
   );
 }

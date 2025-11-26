@@ -14,11 +14,9 @@ import {
   Briefcase,
   AlertTriangle,
   Settings,
-  LogOut,
   Menu,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "@/stores/useAuthStore";
 
 const adminMenuItems = [
   {
@@ -33,7 +31,7 @@ const adminMenuItems = [
   },
   {
     title: "Oportunidades",
-    href: "/admin/opportunities",
+    href: "/admin/opportunities/reported",
     icon: Briefcase,
   },
   {
@@ -60,11 +58,9 @@ const adminMenuItems = [
 export function AdminSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/login");
+  const backHome = () => {
+    navigate("/home");
   };
 
   const isActiveRoute = (href: string) => {
@@ -102,10 +98,9 @@ export function AdminSidebar() {
         <Button
           variant="ghost"
           className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={handleLogout}
+          onClick={backHome}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sair
+          Voltar a WeUnite
         </Button>
       </div>
     </div>
@@ -119,11 +114,9 @@ export function AdminSidebar() {
 export function AdminMobileSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/login");
+  const backHome = () => {
+    navigate("/home");
   };
 
   const isActiveRoute = (href: string) => {
@@ -167,9 +160,8 @@ export function AdminMobileSidebar() {
           <Button
             variant="ghost"
             className="w-full justify-start text-red-600 hover:text-red-700"
-            onClick={handleLogout}
+            onClick={backHome}
           >
-            <LogOut className="mr-2 h-4 w-4" />
             Sair
           </Button>
         </div>

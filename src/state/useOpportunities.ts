@@ -11,6 +11,7 @@ import {
   toggleSubscriberRequest,
   updateOpportunityRequest,
   checkIsSubscribedRequest,
+  getAthleteSubscriptionsRequest,
 } from "@/api/services/opportunityService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -103,12 +104,16 @@ export const useDeleteOpportunity = () => {
   });
 };
 
-export const useGetOpportunitiesCompany = (companyId: number) => {
+export const useGetOpportunitiesCompany = (
+  companyId: number,
+  options?: { enabled?: boolean },
+) => {
   return useQuery({
     queryKey: opportunityKeys.list(`companyId=${companyId}`),
     queryFn: () => getOpportunitiesCompanyRequest(companyId),
     staleTime: 5 * 60 * 1000,
     retry: 2,
+    enabled: options?.enabled ?? true,
   });
 };
 
@@ -122,13 +127,12 @@ export const useGetOpportunities = () => {
 };
 
 export const useGetOpportunitySubscribers = (
-  companyId: number,
   opportunityId: number,
   enabled: boolean = true,
 ) => {
   return useQuery({
     queryKey: opportunityKeys.subscribers(opportunityId),
-    queryFn: () => getOpportunitySubscribersRequest(companyId, opportunityId),
+    queryFn: () => getOpportunitySubscribersRequest(opportunityId),
     enabled,
     staleTime: 2 * 60 * 1000,
     retry: 2,
@@ -179,5 +183,18 @@ export const useCheckIsSubscribed = (
     enabled,
     staleTime: 1 * 60 * 1000,
     retry: 2,
+  });
+};
+
+export const useGetAthleteSubscriptions = (
+  athleteId: number,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: [...opportunityKeys.all, "athleteSubscriptions", athleteId],
+    queryFn: () => getAthleteSubscriptionsRequest(athleteId),
+    staleTime: 2 * 60 * 1000,
+    retry: 2,
+    enabled: options?.enabled ?? true,
   });
 };

@@ -1,8 +1,4 @@
-import type {
-  CreatePost,
-  UpdatePost,
-  GetPost,
-} from "@/@types/post.types";
+import type { CreatePost, UpdatePost, GetPost } from "@/@types/post.types";
 import { instance as axios } from "../axios";
 import { AxiosError } from "axios";
 
@@ -47,7 +43,7 @@ export const createPostRequest = async (data: CreatePost, userId: number) => {
 export const updatePostRequest = async (
   data: UpdatePost,
   userId: number,
-  postId: number
+  postId: number,
 ) => {
   try {
     const formData = new FormData();
@@ -64,7 +60,7 @@ export const updatePostRequest = async (
 
     const response = await axios.put(
       `/posts/update/${userId}/${postId}`,
-      formData
+      formData,
     );
 
     return {
@@ -75,7 +71,7 @@ export const updatePostRequest = async (
     };
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
-    
+
     return {
       success: false,
       data: null,
@@ -87,7 +83,7 @@ export const updatePostRequest = async (
 
 export const getPostRequest = async (data: GetPost) => {
   try {
-    const response = await axios.post(`/post/get/${data}`);
+    const response = await axios.get(`/post/get/${data.id}`);
 
     return {
       success: true,
