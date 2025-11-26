@@ -22,12 +22,7 @@ import {
 import { FileText, Flag, Heart, Search, Image, Loader2 } from "lucide-react";
 import type { Report, ReportedPost } from "@/@types/admin.types";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import {
-  getReportedPostsDetailsRequest,
-  deletePostByAdminRequest,
-  restorePostByAdminRequest,
-  dismissReportsRequest,
-} from "@/api/services/adminService";
+import { getReportedPostsDetailsRequest } from "@/api/services/adminService";
 import { toast } from "sonner";
 
 /**
@@ -81,7 +76,7 @@ export function ReportedPostsPage() {
       },
       reason: firstReport.reason,
       description: `Post denunciado por ${firstReport.reason}. Total de ${reportedPost.totalReports} denúncias.`,
-      status: firstReport.status.toLowerCase() as any,
+      status: reportedPost.status?.toLowerCase() as any, // Usar o status do reportedPost que reflete o estado atual
       createdAt: firstReport.createdAt,
       content: reportedPost.post.text,
       imageUrl: reportedPost.post.imageUrl || undefined,
@@ -89,63 +84,6 @@ export function ReportedPostsPage() {
 
     setSelectedReport(report);
     setIsModalOpen(true);
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja deletar este post? Esta ação não pode ser desfeita.",
-    );
-
-    if (!confirmed) return;
-
-    const response = await deletePostByAdminRequest(Number(postId));
-
-    if (response.success) {
-      toast.success(response.message || "Post deletado com sucesso!");
-      loadReportedPosts(); // Recarrega a lista
-    } else {
-      toast.error(
-        `Erro: ${response.error || "Não foi possível deletar o post"}`,
-      );
-    }
-  };
-
-  const handleRestorePost = async (postId: string) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja restaurar este post?",
-    );
-
-    if (!confirmed) return;
-
-    const response = await restorePostByAdminRequest(Number(postId));
-
-    if (response.success) {
-      toast.success(response.message || "Post restaurado com sucesso!");
-      loadReportedPosts(); // Recarrega a lista
-    } else {
-      toast.error(
-        `Erro: ${response.error || "Não foi possível restaurar o post"}`,
-      );
-    }
-  };
-
-  const handleDismissReports = async (postId: string) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja descartar as denúncias deste post?",
-    );
-
-    if (!confirmed) return;
-
-    const response = await dismissReportsRequest(Number(postId), "POST");
-
-    if (response.success) {
-      toast.success(response.message || "Denúncias descartadas com sucesso!");
-      loadReportedPosts(); // Recarrega a lista
-    } else {
-      toast.error(
-        `Erro: ${response.error || "Não foi possível descartar as denúncias"}`,
-      );
-    }
   };
 
   const getTimeAgoSimple = (date: string) => {
@@ -174,7 +112,7 @@ export function ReportedPostsPage() {
     const statusLower = reportedPost.status?.toString().toLowerCase();
     const matchesStatus =
       statusFilter === "all"
-        ? statusLower !== "deleted" && statusLower !== "resolved" // "Todos" exclui apenas deletados e resolvidos
+        ? statusLower === "pending" || statusLower === "reviewed" // "Todos" mostra apenas pendentes e em análise
         : statusLower === statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
@@ -381,51 +319,15 @@ export function ReportedPostsPage() {
                           {getTimeAgoSimple(reportedPost.post.createdAt)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end ">
-                            {reportedPost.status !== "resolved" &&
-                              reportedPost.status !== "deleted" && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleReviewPost(reportedPost)
-                                    }
-                                  >
-                                    Revisar
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDismissReports(reportedPost.post.id)
-                                    }
-                                  >
-                                    Descartar
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeletePost(reportedPost.post.id)
-                                    }
-                                  >
-                                    Deletar
-                                  </Button>
-                                </>
-                              )}
-                            {reportedPost.status === "deleted" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleRestorePost(reportedPost.post.id)
-                                }
-                              >
-                                Restaurar
-                              </Button>
-                            )}
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleReviewPost(reportedPost)}
+                          >
+                            {reportedPost.status === "deleted"
+                              ? "Restaurar"
+                              : "Revisar"}
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))

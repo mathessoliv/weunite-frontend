@@ -19,7 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
-import { Briefcase, Flag, MapPin, Search, Loader2 } from "lucide-react";
+import {
+  Briefcase,
+  Flag,
+  MapPin,
+  Search,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
 import type { Report, ReportedOpportunity } from "@/@types/admin.types";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
@@ -91,7 +98,7 @@ export function ReportedOpportunitiesPage() {
       },
       reason: firstReport.reason,
       description: `Oportunidade denunciada por ${firstReport.reason}. Total de ${reportedOpportunity.totalReports} denúncias.`,
-      status: firstReport.status.toLowerCase() as any,
+      status: reportedOpportunity.status?.toLowerCase() as any, // Usar o status do reportedOpportunity que reflete o estado atual
       createdAt: firstReport.createdAt,
       content: reportedOpportunity.opportunity.description,
     };
@@ -194,7 +201,7 @@ export function ReportedOpportunitiesPage() {
       const statusLower = reportedOpportunity.status?.toString().toLowerCase();
       const matchesStatus =
         statusFilter === "all"
-          ? statusLower !== "deleted" && statusLower !== "resolved" // "Todos" exclui apenas deletados e resolvidos
+          ? statusLower === "pending" || statusLower === "reviewed" // "Todos" mostra apenas pendentes e em análise
           : statusLower === statusFilter.toLowerCase();
       return matchesSearch && matchesStatus;
     },
@@ -395,46 +402,8 @@ export function ReportedOpportunitiesPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            {reportedOpportunity.status !== "resolved" &&
-                              reportedOpportunity.status !== "deleted" && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleReviewOpportunity(
-                                        reportedOpportunity,
-                                      )
-                                    }
-                                  >
-                                    Revisar
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDismissReports(
-                                        reportedOpportunity.opportunity.id,
-                                      )
-                                    }
-                                  >
-                                    Descartar
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteOpportunity(
-                                        reportedOpportunity.opportunity.id,
-                                      )
-                                    }
-                                  >
-                                    Deletar
-                                  </Button>
-                                </>
-                              )}
-                            {reportedOpportunity.status === "deleted" && (
+                          <div className="flex justify-end gap-2">
+                            {reportedOpportunity.status === "deleted" ? (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -443,8 +412,20 @@ export function ReportedOpportunitiesPage() {
                                     reportedOpportunity.opportunity.id,
                                   )
                                 }
+                                className="gap-2"
                               >
+                                <RotateCcw className="h-4 w-4" />
                                 Restaurar
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleReviewOpportunity(reportedOpportunity)
+                                }
+                              >
+                                Revisar
                               </Button>
                             )}
                           </div>

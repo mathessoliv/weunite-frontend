@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/sheet";
 import {
   BarChart3,
-  Users,
   FileText,
   Briefcase,
   AlertTriangle,
@@ -33,11 +32,6 @@ const adminMenuItems = [
     title: "Oportunidades",
     href: "/admin/opportunities/reported",
     icon: Briefcase,
-  },
-  {
-    title: "Usuários",
-    href: "/admin/users",
-    icon: Users,
   },
   {
     title: "Denúncias",

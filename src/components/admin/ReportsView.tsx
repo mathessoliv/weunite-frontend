@@ -86,11 +86,13 @@ export function ReportsView() {
                 reportedBy: {
                   name: report.reporter.name,
                   username: report.reporter.username,
+                  profileImg: report.reporter.profileImg,
                 },
                 reportedUser: {
                   id: reportedPost.post.user.id,
                   name: reportedPost.post.user.name,
                   username: reportedPost.post.user.username,
+                  profileImg: reportedPost.post.user.profileImg,
                 },
                 reason: report.reason,
                 description: "", // Backend não retorna descrição detalhada
@@ -123,6 +125,7 @@ export function ReportsView() {
                   reportedBy: {
                     name: report.reporter.name,
                     username: report.reporter.username,
+                    profileImg: report.reporter.profileImg,
                   },
                   reportedUser: {
                     id: reportedOpportunity.opportunity.company?.id,
@@ -132,6 +135,8 @@ export function ReportsView() {
                     username:
                       reportedOpportunity.opportunity.company?.username ||
                       "unknown",
+                    profileImg:
+                      reportedOpportunity.opportunity.company?.profileImg,
                   },
                   reason: report.reason,
                   description: "",
@@ -174,26 +179,23 @@ export function ReportsView() {
     const matchesType =
       filterType === "all" || report.entityType === filterType;
 
-    // Normalizar status para comparação
-    const normalizedReportStatus = report.status
-      .toLowerCase()
-      .replace(/_/g, "_");
-    const normalizedFilterStatus = filterStatus.toLowerCase();
+    const matchesSearch = searchQuery
+      ? report.reportedUser.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        report.reportedBy.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        report.reason.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
 
+    const statusLower = report.status?.toString().toLowerCase();
     const matchesStatus =
-      filterStatus === "all" ||
-      normalizedReportStatus === normalizedFilterStatus;
+      filterStatus === "all"
+        ? statusLower === "pending" || statusLower === "reviewed" // "Todos" mostra apenas pendentes e em análise
+        : statusLower === filterStatus.toLowerCase();
 
-    const matchesSearch =
-      report.reportedUser.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      report.reportedBy.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      report.reason.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesType && matchesStatus && matchesSearch;
+    return matchesType && matchesSearch && matchesStatus;
   });
 
   console.log(`🔍 Total denúncias no estado: ${reportsData.length}`);
@@ -318,11 +320,10 @@ export function ReportsView() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="pending">⏳ Pendente</SelectItem>
-                <SelectItem value="under_review">🔍 Em Análise</SelectItem>
-                <SelectItem value="resolved_dismissed">❌ Rejeitada</SelectItem>
-                <SelectItem value="resolved_suspended">🚫 Suspenso</SelectItem>
-                <SelectItem value="resolved_banned">🔒 Banido</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="reviewed">Em Análise</SelectItem>
+                <SelectItem value="resolved">Resolvido</SelectItem>
+                <SelectItem value="deleted">Deletado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -367,7 +368,12 @@ export function ReportsView() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                          {report.reportedUser.username && (
+                          {report.reportedUser.profileImg ? (
+                            <AvatarImage
+                              src={report.reportedUser.profileImg}
+                              alt={report.reportedUser.name}
+                            />
+                          ) : (
                             <AvatarImage
                               src={`https://api.dicebear.com/7.x/initials/svg?seed=${report.reportedUser.username}`}
                             />
@@ -389,7 +395,12 @@ export function ReportsView() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                          {report.reportedBy.username && (
+                          {report.reportedBy.profileImg ? (
+                            <AvatarImage
+                              src={report.reportedBy.profileImg}
+                              alt={report.reportedBy.name}
+                            />
+                          ) : (
                             <AvatarImage
                               src={`https://api.dicebear.com/7.x/initials/svg?seed=${report.reportedBy.username}`}
                             />
@@ -412,7 +423,7 @@ export function ReportsView() {
                         size="sm"
                         onClick={() => handleReportClick(report)}
                       >
-                        Revisar
+                        {report.status === "deleted" ? "Restaurar" : "Revisar"}
                       </Button>
                     </TableCell>
                   </TableRow>

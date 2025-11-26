@@ -89,8 +89,8 @@ export function getReportStatusBadge(status: string) {
     case "pending":
       return (
         <Badge
-          variant="destructive"
-          className="bg-orange-600 text-white hover:bg-orange-700"
+          variant="outline"
+          className="border-yellow-500 text-yellow-700 bg-yellow-50 dark:bg-yellow-950/30"
         >
           {reportStatusMap.pending}
         </Badge>
@@ -107,19 +107,20 @@ export function getReportStatusBadge(status: string) {
       );
     case "resolved_dismissed":
     case "dismissed": // backward compatibility
+    case "resolved":
       return (
         <Badge
           variant="outline"
-          className="border-gray-500 text-gray-600 bg-gray-50 dark:bg-gray-950/30"
+          className="border-green-500 text-green-700 bg-green-50 dark:bg-green-950/30"
         >
-          {reportStatusMap.resolved_dismissed}
+          Resolvida
         </Badge>
       );
     case "resolved_suspended":
       return (
         <Badge
           variant="outline"
-          className="border-red-500 text-red-700 bg-red-50 dark:bg-red-950/30"
+          className="border-green-500 text-green-700 bg-green-50 dark:bg-green-950/30"
         >
           {reportStatusMap.resolved_suspended}
         </Badge>
@@ -127,10 +128,19 @@ export function getReportStatusBadge(status: string) {
     case "resolved_banned":
       return (
         <Badge
-          variant="destructive"
-          className="bg-red-700 text-white hover:bg-red-800"
+          variant="outline"
+          className="border-green-500 text-green-700 bg-green-50 dark:bg-green-950/30"
         >
           {reportStatusMap.resolved_banned}
+        </Badge>
+      );
+    case "deleted":
+      return (
+        <Badge
+          variant="outline"
+          className="border-red-500 text-red-700 bg-red-50 dark:bg-red-950/30"
+        >
+          Deletado
         </Badge>
       );
     default:

@@ -13,6 +13,8 @@ import {
   User,
   ShieldAlert,
   ShieldBan,
+  Trash2,
+  RotateCcw,
 } from "lucide-react";
 import type { Report } from "@/@types/admin.types";
 import { toast } from "sonner";
@@ -21,6 +23,10 @@ import {
   dismissReportsRequest,
   banUserRequest,
   suspendUserRequest,
+  deletePostByAdminRequest,
+  deleteOpportunityByAdminRequest,
+  restorePostByAdminRequest,
+  restoreOpportunityByAdminRequest,
 } from "@/api/services/adminService";
 import { useState } from "react";
 import { getReportReasonText } from "@/utils/adminBadges";
@@ -146,6 +152,68 @@ export function ReportDetailsModal({
       onActionComplete?.();
     } else {
       toast.error(response.error || "Erro ao marcar denúncia como em análise");
+    }
+  };
+
+  const handleDeleteContent = async () => {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja deletar este ${report.entityType === "POST" ? "post" : "oportunidade"}? Esta ação não pode ser desfeita.`,
+    );
+
+    if (!confirmed) return;
+
+    setIsLoading(true);
+
+    const response =
+      report.entityType === "POST"
+        ? await deletePostByAdminRequest(report.entityId)
+        : await deleteOpportunityByAdminRequest(report.entityId);
+
+    setIsLoading(false);
+
+    if (response.success) {
+      toast.success(
+        response.message ||
+          `${report.entityType === "POST" ? "Post" : "Oportunidade"} deletado com sucesso!`,
+      );
+      onOpenChange(false);
+      // Aguardar o modal fechar antes de recarregar
+      setTimeout(() => {
+        onActionComplete?.();
+      }, 100);
+    } else {
+      toast.error(response.error || "Erro ao deletar conteúdo");
+    }
+  };
+
+  const handleRestoreContent = async () => {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja restaurar este ${report.entityType === "POST" ? "post" : "oportunidade"}?`,
+    );
+
+    if (!confirmed) return;
+
+    setIsLoading(true);
+
+    const response =
+      report.entityType === "POST"
+        ? await restorePostByAdminRequest(report.entityId)
+        : await restoreOpportunityByAdminRequest(report.entityId);
+
+    setIsLoading(false);
+
+    if (response.success) {
+      toast.success(
+        response.message ||
+          `${report.entityType === "POST" ? "Post" : "Oportunidade"} restaurado com sucesso!`,
+      );
+      onOpenChange(false);
+      // Aguardar o modal fechar antes de recarregar
+      setTimeout(() => {
+        onActionComplete?.();
+      }, 100);
+    } else {
+      toast.error(response.error || "Erro ao restaurar conteúdo");
     }
   };
 
@@ -351,6 +419,38 @@ export function ReportDetailsModal({
               <ShieldBan className="h-4 w-4" />
               {isLoading ? "Processando..." : "Banir"}
             </Button>
+
+            {/* Deletar conteúdo */}
+            {report.status !== "deleted" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-red-50 hover:text-red-700 hover:border-red-400 dark:hover:bg-red-950/40 transition-all"
+                onClick={handleDeleteContent}
+                disabled={isLoading}
+              >
+                <Trash2 className="h-4 w-4" />
+                {isLoading
+                  ? "Processando..."
+                  : `Deletar ${report.entityType === "POST" ? "Post" : "Oportunidade"}`}
+              </Button>
+            )}
+
+            {/* Restaurar conteúdo */}
+            {report.status === "deleted" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-green-50 hover:text-green-700 hover:border-green-400 dark:hover:bg-green-950/40 transition-all"
+                onClick={handleRestoreContent}
+                disabled={isLoading}
+              >
+                <RotateCcw className="h-4 w-4" />
+                {isLoading
+                  ? "Processando..."
+                  : `Restaurar ${report.entityType === "POST" ? "Post" : "Oportunidade"}`}
+              </Button>
+            )}
 
             <div className="mt-6 pt-4 border-t">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
