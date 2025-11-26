@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { FileText, Flag, Heart, Search, Image, Loader2 } from "lucide-react";
-import type { Report, ReportedPost } from "@/@types/report.types";
+import type { Report, ReportedPost } from "@/@types/admin.types";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
   getReportedPostsDetailsRequest,

@@ -127,13 +127,12 @@ export const useGetOpportunities = () => {
 };
 
 export const useGetOpportunitySubscribers = (
-  companyId: number,
   opportunityId: number,
   enabled: boolean = true,
 ) => {
   return useQuery({
     queryKey: opportunityKeys.subscribers(opportunityId),
-    queryFn: () => getOpportunitySubscribersRequest(companyId, opportunityId),
+    queryFn: () => getOpportunitySubscribersRequest(opportunityId),
     enabled,
     staleTime: 2 * 60 * 1000,
     retry: 2,
