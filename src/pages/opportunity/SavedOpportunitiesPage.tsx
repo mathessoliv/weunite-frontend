@@ -21,7 +21,22 @@ export default function SavedOpportunitiesPage() {
     { enabled: !!user?.id && user?.role === "ATHLETE" },
   );
 
-  const savedOpportunities = savedOpportunitiesData?.data || [];
+  // Mapear dados do backend para o formato esperado
+  const savedOpportunities = (savedOpportunitiesData?.data || []).map(
+    (saved: any) => ({
+      id: saved.id,
+      athleteId: saved.athleteId,
+      savedAt: saved.savedAt,
+      // Dados da oportunidade
+      opportunityId: saved.opportunity.id,
+      title: saved.opportunity.title,
+      description: saved.opportunity.description,
+      location: saved.opportunity.location,
+      dateEnd: saved.opportunity.dateEnd,
+      skills: saved.opportunity.skills,
+      company: saved.opportunity.company,
+    }),
+  );
 
   const handleViewDetails = (savedOpp: any) => {
     // Converter SavedOpportunity para Opportunity

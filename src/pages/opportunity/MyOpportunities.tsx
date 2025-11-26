@@ -63,7 +63,6 @@ export function MyOpportunities() {
 
   const { data: subscribersResponse, isLoading: isLoadingSubscribers } =
     useGetOpportunitySubscribers(
-      Number(user?.id),
       Number(selectedOpportunity?.id),
       !!selectedOpportunity && isCompany,
     );
@@ -76,9 +75,20 @@ export function MyOpportunities() {
 
   // Para atletas: lista de candidaturas (extrair as oportunidades)
   const athleteSubscriptions = subscriptionsResponse?.data || [];
-  const athleteOpportunities = athleteSubscriptions.map(
-    (sub: any) => sub.opportunity,
-  );
+
+  // Defensive mapping: backend may return SubscriberDTO objects (with .opportunity)
+  // or, in some cases, a plain Opportunity array. Normalize both cases to an
+  // Opportunity[] so the UI rendering is safe and won't throw.
+  const athleteOpportunities: Opportunity[] = (athleteSubscriptions || [])
+    .map((sub: any) => {
+      if (!sub) return null;
+      // If it's a SubscriberDTO shape
+      if (sub.opportunity) return sub.opportunity as Opportunity;
+      // If it's already an Opportunity
+      if (sub.id && sub.title) return sub as Opportunity;
+      return null;
+    })
+    .filter(Boolean) as Opportunity[];
 
   const opportunities = isCompany ? companyOpportunities : athleteOpportunities;
 
@@ -121,26 +131,27 @@ export function MyOpportunities() {
               : "Acompanhe as oportunidades em que você se candidatou"}
           </p>
         </div>
-
-        <Card className="w-full">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            {isCompany ? (
-              <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
-            ) : (
-              <UserCheck className="h-16 w-16 text-muted-foreground mb-4" />
-            )}
-            <p className="text-lg font-medium text-muted-foreground mb-2">
-              {isCompany
-                ? "Você ainda não criou nenhuma oportunidade"
-                : "Você ainda não se candidatou a nenhuma oportunidade"}
-            </p>
-            <p className="text-sm text-muted-foreground text-center max-w-md">
-              {isCompany
-                ? "Crie sua primeira oportunidade para começar a receber inscrições de atletas interessados"
-                : "Explore as oportunidades disponíveis e candidate-se às que mais combinam com você"}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="w-full">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              {isCompany ? (
+                <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
+              ) : (
+                <UserCheck className="h-16 w-16 text-muted-foreground mb-4" />
+              )}
+              <p className="text-lg font-medium text-muted-foreground mb-2">
+                {isCompany
+                  ? "Você ainda não criou nenhuma oportunidade"
+                  : "Você ainda não se candidatou a nenhuma oportunidade"}
+              </p>
+              <p className="text-sm text-muted-foreground text-center max-w-md">
+                {isCompany
+                  ? "Crie sua primeira oportunidade para começar a receber inscrições de atletas interessados"
+                  : "Explore as oportunidades disponíveis e candidate-se às que mais combinam com você"}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -161,14 +172,14 @@ export function MyOpportunities() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {opportunities.map((opportunity: Opportunity) => {
           const subscribersCount = opportunity.subscribersCount || 0;
-          const deadlineDate = new Date(opportunity.dateEnd).toLocaleDateString(
-            "pt-BR",
-            {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            },
-          );
+          // Protege parsing de data inválida
+          const deadlineDate = opportunity.dateEnd
+            ? new Date(opportunity.dateEnd).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })
+            : "-";
 
           return (
             <Card
