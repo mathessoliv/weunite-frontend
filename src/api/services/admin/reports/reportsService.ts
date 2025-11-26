@@ -2,6 +2,7 @@ import type { AxiosError } from "axios";
 import type {
   ReportedPost,
   ReportedOpportunity,
+  ReportedComment,
   ReportSummary,
 } from "@/@types/admin.types";
 import type { ApiResponse } from "@/types/api.types";
@@ -306,6 +307,149 @@ export const restoreOpportunityByAdminRequest = async (
   }
 };
 
+// ========== Comentários Denunciados ==========
+
+/**
+ * Busca resumo dos comentários denunciados (apenas IDs e contagem)
+ */
+export const getReportedCommentsSummaryRequest = async (): Promise<
+  ApiResponse<ReportSummary[]>
+> => {
+  try {
+    const response = await axios.get("/admin/comments/reported");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Comentários denunciados carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar comentários denunciados",
+    };
+  }
+};
+
+/**
+ * Busca detalhes completos dos comentários denunciados
+ */
+export const getReportedCommentsDetailsRequest = async (): Promise<
+  ApiResponse<ReportedComment[]>
+> => {
+  try {
+    const response = await axios.get("/admin/comments/reported/details");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes dos comentários denunciados carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar detalhes dos comentários denunciados",
+    };
+  }
+};
+
+/**
+ * Busca detalhes de um comentário denunciado específico
+ */
+export const getReportedCommentDetailRequest = async (
+  commentId: number,
+): Promise<ApiResponse<ReportedComment>> => {
+  try {
+    const response = await axios.get(`/admin/comments/reported/${commentId}`);
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes do comentário carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar detalhes do comentário",
+    };
+  }
+};
+
+/**
+ * Deleta um comentário denunciado
+ */
+export const deleteCommentByAdminRequest = async (
+  commentId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.delete(`/admin/comments/${commentId}`);
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Comentário deletado com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao deletar comentário",
+    };
+  }
+};
+
+/**
+ * Restaura um comentário deletado
+ */
+export const restoreCommentByAdminRequest = async (
+  commentId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.put(`/admin/comments/${commentId}/restore`);
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Comentário restaurado com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao restaurar comentário",
+    };
+  }
+};
+
 // ========== Gerenciamento de Status de Denúncias ==========
 
 /**
@@ -313,7 +457,7 @@ export const restoreOpportunityByAdminRequest = async (
  */
 export const dismissReportsRequest = async (
   entityId: number,
-  type: "POST" | "OPPORTUNITY",
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
 ): Promise<ApiResponse<string>> => {
   try {
     const response = await axios.put(
@@ -343,7 +487,7 @@ export const dismissReportsRequest = async (
  */
 export const markReportsAsReviewedRequest = async (
   entityId: number,
-  type: "POST" | "OPPORTUNITY",
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
 ): Promise<ApiResponse<string>> => {
   try {
     const response = await axios.put(
@@ -375,7 +519,7 @@ export const markReportsAsReviewedRequest = async (
  */
 export const resolveReportsRequest = async (
   entityId: number,
-  type: "POST" | "OPPORTUNITY",
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
 ): Promise<ApiResponse<string>> => {
   try {
     const response = await axios.put(

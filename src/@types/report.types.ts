@@ -5,6 +5,7 @@
 import type { User } from "./user.types";
 import type { Post } from "./post.types";
 import type { Opportunity } from "./opportunity.types";
+import type { Comment } from "./comment.types";
 
 /**
  * Status possíveis de uma denúncia
@@ -138,6 +139,31 @@ export interface ReportedOpportunity {
   reports: OpportunityReport[];
   totalReports: number;
   status: "active" | "hidden" | "deleted" | "resolved" | "reviewed";
+}
+
+/**
+ * Interface para denúncia de comentário
+ */
+export interface CommentReport {
+  id: string;
+  commentId: string;
+  reporter: User;
+  reason: ReportReason;
+  description: string;
+  status: ReportStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+/**
+ * Interface para comentário denunciado
+ */
+export interface ReportedComment {
+  comment: Comment;
+  reports: CommentReport[];
+  totalReports: number;
+  status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
 /**

@@ -3,7 +3,7 @@ import type { AxiosError } from "axios";
 import type { ApiResponse } from "@/types/api.types";
 
 interface CreateReportRequest {
-  type: "POST" | "OPPORTUNITY";
+  type: "POST" | "OPPORTUNITY" | "COMMENT";
   entityId: number;
   reason: string;
 }
@@ -140,7 +140,7 @@ export const getReportsByStatusRequest = async (
  */
 export const getReportCountRequest = async (
   entityId: number,
-  type: "POST" | "OPPORTUNITY",
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
 ): Promise<ApiResponse<number>> => {
   try {
     const response = await axios.get(`/reports/count/${entityId}/${type}`);

@@ -25,8 +25,10 @@ import {
   suspendUserRequest,
   deletePostByAdminRequest,
   deleteOpportunityByAdminRequest,
+  deleteCommentByAdminRequest,
   restorePostByAdminRequest,
   restoreOpportunityByAdminRequest,
+  restoreCommentByAdminRequest,
 } from "@/api/services/adminService";
 import { useState } from "react";
 import { getReportReasonText } from "@/utils/adminBadges";
@@ -156,25 +158,36 @@ export function ReportDetailsModal({
   };
 
   const handleDeleteContent = async () => {
+    const entityName =
+      report.entityType === "POST"
+        ? "post"
+        : report.entityType === "COMMENT"
+          ? "comentário"
+          : "oportunidade";
+
     const confirmed = window.confirm(
-      `Tem certeza que deseja deletar este ${report.entityType === "POST" ? "post" : "oportunidade"}? Esta ação não pode ser desfeita.`,
+      `Tem certeza que deseja deletar este ${entityName}? Esta ação não pode ser desfeita.`,
     );
 
     if (!confirmed) return;
 
     setIsLoading(true);
 
-    const response =
-      report.entityType === "POST"
-        ? await deletePostByAdminRequest(report.entityId)
-        : await deleteOpportunityByAdminRequest(report.entityId);
+    let response;
+    if (report.entityType === "POST") {
+      response = await deletePostByAdminRequest(report.entityId);
+    } else if (report.entityType === "COMMENT") {
+      response = await deleteCommentByAdminRequest(report.entityId);
+    } else {
+      response = await deleteOpportunityByAdminRequest(report.entityId);
+    }
 
     setIsLoading(false);
 
     if (response.success) {
       toast.success(
         response.message ||
-          `${report.entityType === "POST" ? "Post" : "Oportunidade"} deletado com sucesso!`,
+          `${entityName.charAt(0).toUpperCase() + entityName.slice(1)} deletado com sucesso!`,
       );
       onOpenChange(false);
       // Aguardar o modal fechar antes de recarregar
@@ -187,25 +200,36 @@ export function ReportDetailsModal({
   };
 
   const handleRestoreContent = async () => {
+    const entityName =
+      report.entityType === "POST"
+        ? "post"
+        : report.entityType === "COMMENT"
+          ? "comentário"
+          : "oportunidade";
+
     const confirmed = window.confirm(
-      `Tem certeza que deseja restaurar este ${report.entityType === "POST" ? "post" : "oportunidade"}?`,
+      `Tem certeza que deseja restaurar este ${entityName}?`,
     );
 
     if (!confirmed) return;
 
     setIsLoading(true);
 
-    const response =
-      report.entityType === "POST"
-        ? await restorePostByAdminRequest(report.entityId)
-        : await restoreOpportunityByAdminRequest(report.entityId);
+    let response;
+    if (report.entityType === "POST") {
+      response = await restorePostByAdminRequest(report.entityId);
+    } else if (report.entityType === "COMMENT") {
+      response = await restoreCommentByAdminRequest(report.entityId);
+    } else {
+      response = await restoreOpportunityByAdminRequest(report.entityId);
+    }
 
     setIsLoading(false);
 
     if (response.success) {
       toast.success(
         response.message ||
-          `${report.entityType === "POST" ? "Post" : "Oportunidade"} restaurado com sucesso!`,
+          `${entityName.charAt(0).toUpperCase() + entityName.slice(1)} restaurado com sucesso!`,
       );
       onOpenChange(false);
       // Aguardar o modal fechar antes de recarregar
@@ -432,7 +456,13 @@ export function ReportDetailsModal({
                 <Trash2 className="h-4 w-4" />
                 {isLoading
                   ? "Processando..."
-                  : `Deletar ${report.entityType === "POST" ? "Post" : "Oportunidade"}`}
+                  : `Deletar ${
+                      report.entityType === "POST"
+                        ? "Post"
+                        : report.entityType === "COMMENT"
+                          ? "Comentário"
+                          : "Oportunidade"
+                    }`}
               </Button>
             )}
 
@@ -448,7 +478,13 @@ export function ReportDetailsModal({
                 <RotateCcw className="h-4 w-4" />
                 {isLoading
                   ? "Processando..."
-                  : `Restaurar ${report.entityType === "POST" ? "Post" : "Oportunidade"}`}
+                  : `Restaurar ${
+                      report.entityType === "POST"
+                        ? "Post"
+                        : report.entityType === "COMMENT"
+                          ? "Comentário"
+                          : "Oportunidade"
+                    }`}
               </Button>
             )}
 

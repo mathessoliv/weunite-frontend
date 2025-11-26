@@ -47,6 +47,7 @@ import { useDeleteComment } from "@/state/useComments";
 import { getInitials } from "@/utils/getInitials";
 import { useToggleLikeComment, useCommentLikes } from "@/state/useLikes";
 import { useEffect } from "react";
+import { ReportModal } from "@/components/shared/ReportModal";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
 
@@ -56,6 +57,7 @@ export default function Comment({ comment }: { comment: Comment }) {
 
   const [isEditCommentOpen, setIsEditCommentOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   type LikeUser = { user: { id: string | number } };
   const { data: likesData } = useCommentLikes(Number(comment.id));
   const serverLikes: LikeUser[] = likesData?.success
@@ -114,6 +116,14 @@ export default function Comment({ comment }: { comment: Comment }) {
         open={isEditCommentOpen}
         onOpenChange={setIsEditCommentOpen}
         comment={comment}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onOpenChange={setIsReportModalOpen}
+        entityType="COMMENT"
+        entityId={Number(comment.id)}
+        entityTitle={comment.text?.substring(0, 50) || "Comentário"}
       />
 
       {/* wrapper with id to allow scrolling/highlight from outside */}
@@ -204,7 +214,10 @@ export default function Comment({ comment }: { comment: Comment }) {
                       Compartilhar
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600 hover:cursor-pointer">
+                    <DropdownMenuItem
+                      className="text-red-600 hover:cursor-pointer"
+                      onClick={() => setIsReportModalOpen(true)}
+                    >
                       <Flag className="mr-2 h-4 w-4" />
                       Denunciar
                     </DropdownMenuItem>

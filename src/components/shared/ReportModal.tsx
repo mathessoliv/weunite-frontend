@@ -24,7 +24,7 @@ import { toast } from "sonner";
 interface ReportModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  entityType: "POST" | "OPPORTUNITY";
+  entityType: "POST" | "OPPORTUNITY" | "COMMENT";
   entityId: number;
   entityTitle?: string;
 }
@@ -36,6 +36,15 @@ const POST_REPORT_REASONS = [
   { value: "fake_profile", label: "Perfil falso" },
   { value: "copyright_violation", label: "Violação de direitos autorais" },
   { value: "violence", label: "Violência ou ameaças" },
+  { value: "hate_speech", label: "Discurso de ódio" },
+  { value: "misinformation", label: "Desinformação" },
+  { value: "other", label: "Outros" },
+];
+
+const COMMENT_REPORT_REASONS = [
+  { value: "spam", label: "Spam ou conteúdo enganoso" },
+  { value: "harassment", label: "Assédio ou bullying" },
+  { value: "inappropriate_content", label: "Conteúdo inadequado ou ofensivo" },
   { value: "hate_speech", label: "Discurso de ódio" },
   { value: "misinformation", label: "Desinformação" },
   { value: "other", label: "Outros" },
@@ -74,7 +83,11 @@ export function ReportModal({
 
   // Seleciona os motivos baseado no tipo de entidade
   const reportReasons =
-    entityType === "POST" ? POST_REPORT_REASONS : OPPORTUNITY_REPORT_REASONS;
+    entityType === "POST"
+      ? POST_REPORT_REASONS
+      : entityType === "COMMENT"
+        ? COMMENT_REPORT_REASONS
+        : OPPORTUNITY_REPORT_REASONS;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,10 +131,15 @@ export function ReportModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            Denunciar {entityType === "POST" ? "Post" : "Oportunidade"}
+            Denunciar{" "}
+            {entityType === "POST"
+              ? "Post"
+              : entityType === "COMMENT"
+                ? "Comentário"
+                : "Oportunidade"}
           </DialogTitle>
           <DialogDescription>
-            {entityType === "POST"
+            {entityType === "POST" || entityType === "COMMENT"
               ? "Sua denúncia será analisada pela nossa equipe. Use este recurso apenas para conteúdos que violem nossas diretrizes da comunidade."
               : "Sua denúncia será analisada pela nossa equipe. Ajude-nos a manter apenas oportunidades legítimas na plataforma."}
           </DialogDescription>

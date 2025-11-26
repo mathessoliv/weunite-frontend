@@ -138,6 +138,26 @@ export interface ReportedOpportunity {
   status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
+export interface ReportedComment {
+  comment: {
+    id: string;
+    text: string;
+    imageUrl: string | null;
+    createdAt: string;
+    updatedAt: string | null;
+    user: {
+      id: string;
+      name: string;
+      username: string;
+      email: string;
+      profileImg?: string;
+    };
+  };
+  reports: PostReport[];
+  totalReports: number;
+  status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
+}
+
 export interface ReportSummary {
   entityId: number;
   entityType: string;
@@ -156,7 +176,7 @@ export interface ModerationAction {
 export interface Report {
   id: string;
   entityId: number;
-  entityType: "POST" | "OPPORTUNITY";
+  entityType: "POST" | "OPPORTUNITY" | "COMMENT";
   reportedBy: {
     name: string;
     username: string;

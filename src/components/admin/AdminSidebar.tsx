@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Settings,
   Menu,
+  MessageSquare,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -32,6 +33,11 @@ const adminMenuItems = [
     title: "Oportunidades",
     href: "/admin/opportunities/reported",
     icon: Briefcase,
+  },
+  {
+    title: "Comentários",
+    href: "/admin/comments/reported",
+    icon: MessageSquare,
   },
   {
     title: "Denúncias",

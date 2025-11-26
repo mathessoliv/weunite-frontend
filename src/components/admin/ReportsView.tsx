@@ -24,12 +24,19 @@ import {
 } from "@/components/ui/Select";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertCircle, FileText, Briefcase, Search } from "lucide-react";
+import {
+  AlertCircle,
+  FileText,
+  Briefcase,
+  Search,
+  MessageSquare,
+} from "lucide-react";
 import { ReportDetailsModal } from "./ReportDetailsModal";
 import type {
   Report,
   ReportedPost,
   ReportedOpportunity,
+  ReportedComment,
 } from "@/@types/admin.types";
 import {
   getReportStatusBadge,
@@ -38,12 +45,14 @@ import {
 import {
   getReportedPostsDetailsRequest,
   getReportedOpportunitiesDetailsRequest,
+  getReportedCommentsDetailsRequest,
 } from "@/api/services/adminService";
 import { toast } from "sonner";
 
 const typeLabels: Record<string, string> = {
   POST: "Post",
   OPPORTUNITY: "Oportunidade",
+  COMMENT: "Comentário",
 };
 
 export function ReportsView() {
@@ -62,13 +71,16 @@ export function ReportsView() {
         setLoading(true);
         console.log("🔍 Buscando denúncias...");
 
-        const [postsResponse, opportunitiesResponse] = await Promise.all([
-          getReportedPostsDetailsRequest(),
-          getReportedOpportunitiesDetailsRequest(),
-        ]);
+        const [postsResponse, opportunitiesResponse, commentsResponse] =
+          await Promise.all([
+            getReportedPostsDetailsRequest(),
+            getReportedOpportunitiesDetailsRequest(),
+            getReportedCommentsDetailsRequest(),
+          ]);
 
         console.log("📊 Posts Response:", postsResponse);
         console.log("📊 Opportunities Response:", opportunitiesResponse);
+        console.log("📊 Comments Response:", commentsResponse);
 
         const allReports: Report[] = [];
 
@@ -151,6 +163,44 @@ export function ReportsView() {
           console.log(
             "⚠️ Nenhuma oportunidade denunciada ou erro:",
             opportunitiesResponse.error,
+          );
+        }
+
+        // Processar comentários reportados
+        if (commentsResponse.success && commentsResponse.data) {
+          console.log(
+            `✅ ${commentsResponse.data.length} comentários denunciados encontrados`,
+          );
+          commentsResponse.data.forEach((reportedComment: ReportedComment) => {
+            reportedComment.reports.forEach((report) => {
+              allReports.push({
+                id: report.id,
+                entityId: Number(reportedComment.comment.id),
+                entityType: "COMMENT" as any,
+                reportedBy: {
+                  name: report.reporter.name,
+                  username: report.reporter.username,
+                  profileImg: report.reporter.profileImg,
+                },
+                reportedUser: {
+                  id: reportedComment.comment.user.id,
+                  name: reportedComment.comment.user.name,
+                  username: reportedComment.comment.user.username,
+                  profileImg: reportedComment.comment.user.profileImg,
+                },
+                reason: report.reason,
+                description: "",
+                status: report.status.toLowerCase(),
+                createdAt: report.createdAt,
+                content: reportedComment.comment.text,
+                imageUrl: reportedComment.comment.imageUrl || undefined,
+              });
+            });
+          });
+        } else {
+          console.log(
+            "⚠️ Nenhum comentário denunciado ou erro:",
+            commentsResponse.error,
           );
         }
 
@@ -311,6 +361,7 @@ export function ReportsView() {
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="POST">Posts</SelectItem>
                 <SelectItem value="OPPORTUNITY">Oportunidades</SelectItem>
+                <SelectItem value="COMMENT">Comentários</SelectItem>
               </SelectContent>
             </Select>
 
@@ -361,6 +412,9 @@ export function ReportsView() {
                         )}
                         {report.entityType === "OPPORTUNITY" && (
                           <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        {report.entityType === "COMMENT" && (
+                          <MessageSquare className="h-4 w-4 text-muted-foreground" />
                         )}
                         <span>{typeLabels[report.entityType]}</span>
                       </div>
