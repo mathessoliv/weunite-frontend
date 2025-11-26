@@ -156,7 +156,7 @@ export const MessageInput = ({
       });
 
       if (result.success && result.data) {
-        onSendMessage(result.data.fileUrl, "AUDIO");
+        onSendMessage(result.data.fileUrl, "FILE");
       }
     } catch (error) {
       console.error("Erro ao enviar áudio:", error);

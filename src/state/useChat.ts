@@ -7,6 +7,8 @@ import {
   getUserConversationsRequest,
   markMessagesAsReadRequest,
   uploadMessageFileRequest,
+  deleteMessageRequest,
+  editMessageRequest,
 } from "@/api/services/chatService";
 import { toast } from "sonner";
 
@@ -81,7 +83,7 @@ export const useGetConversationMessages = (
   return useQuery({
     queryKey: chatKeys.messagesByConversation(conversationId, userId),
     queryFn: () => getConversationMessagesRequest(conversationId, userId),
-    staleTime: 5 * 60 * 1000, // 5 minutos - confiar no WebSocket
+    staleTime: Infinity, // ✅ Cache infinito, só atualiza via WebSocket
     gcTime: 30 * 60 * 1000, // Mantém cache por 30 minutos
     refetchOnWindowFocus: false, // ✅ Nunca refetch ao focar janela
     refetchOnMount: false, // ✅ Nunca refetch ao montar (usa cache)
@@ -112,6 +114,11 @@ export const useMarkMessagesAsRead = () => {
 
         queryClient.invalidateQueries({
           queryKey: chatKeys.conversationDetail(conversationId, userId),
+        });
+
+        // ✅ Invalida também as mensagens para atualizar o status de leitura na UI
+        queryClient.invalidateQueries({
+          queryKey: chatKeys.messagesByConversation(conversationId, userId),
         });
       }
     },
@@ -150,6 +157,56 @@ export const useUploadMessageFile = () => {
     },
     onError: () => {
       toast.error("Erro ao fazer upload do arquivo");
+    },
+  });
+};
+
+export const useDeleteMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      messageId,
+      userId,
+      deleteForEveryone,
+      conversationId,
+    }: {
+      messageId: number;
+      userId: number;
+      deleteForEveryone: boolean;
+      conversationId: number;
+    }) => deleteMessageRequest(messageId, userId, deleteForEveryone),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success("Mensagem apagada!");
+      } else {
+        toast.error(result.error || "Erro ao apagar mensagem");
+      }
+    },
+  });
+};
+
+export const useEditMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      messageId,
+      newContent,
+      conversationId,
+      userId,
+    }: {
+      messageId: number;
+      newContent: string;
+      conversationId: number;
+      userId: number;
+    }) => editMessageRequest(messageId, userId, newContent),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success("Mensagem editada!");
+      } else {
+        toast.error(result.error || "Erro ao editar mensagem");
+      }
     },
   });
 };

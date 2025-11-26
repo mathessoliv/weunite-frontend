@@ -62,9 +62,10 @@ export const ChatContainer = ({
     Number(userId) || 0,
   );
 
-  const { mutate: markAsRead } = useMarkMessagesAsRead();
+  const { mutate: markAsReadMutation } = useMarkMessagesAsRead();
 
-  const { isConnected, subscribeToConversation, sendMessage } = useWebSocket();
+  const { isConnected, subscribeToConversation, sendMessage, markAsRead } =
+    useWebSocket();
 
   const messages = messagesData?.success ? messagesData.data || [] : [];
 
@@ -105,10 +106,7 @@ export const ChatContainer = ({
     // ✅ Marca como lido apenas uma vez quando abre a conversa
     // Usa setTimeout para garantir que as mensagens já foram carregadas
     const timeoutId = setTimeout(() => {
-      markAsRead({
-        conversationId: activeConversation.id,
-        userId: Number(userId),
-      });
+      markAsRead(activeConversation.id, Number(userId));
     }, 500);
 
     return () => {
@@ -120,16 +118,43 @@ export const ChatContainer = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConversation?.id, userId]);
 
+  // ✅ Ref para evitar loops de marcação de leitura
+  const lastMarkedReadTimeRef = useRef<number>(0);
+
+  // ✅ Marca mensagens como lidas quando novas chegam e a conversa está aberta
+  useEffect(() => {
+    if (!messages.length || !activeConversation?.id || !userId) return;
+
+    // Verifica se existe ALGUMA mensagem não lida do outro usuário
+    const hasUnreadMessages = messages.some(
+      (msg) => msg.senderId !== Number(userId) && !msg.isRead,
+    );
+
+    // Evita chamar a API repetidamente se já chamou nos últimos 2 segundos
+    const now = Date.now();
+    if (hasUnreadMessages && now - lastMarkedReadTimeRef.current > 2000) {
+      console.log(
+        "👀 Detectadas mensagens não lidas. Agendando marcação de leitura...",
+      );
+
+      // Pequeno delay para garantir que a UI renderizou e o usuário "visualizou"
+      const timer = setTimeout(() => {
+        console.log("📤 Enviando solicitação de leitura para API...");
+        lastMarkedReadTimeRef.current = Date.now();
+        markAsRead(activeConversation.id, Number(userId));
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [messages, activeConversation?.id, userId, markAsRead]);
+
   // ✅ Auto-scroll quando novas mensagens chegam
   useEffect(() => {
-    if (messageAreaRef.current) {
+    if (messageAreaRef.current && messages.length > 0) {
+      // Só scrolla se a última mensagem for nova (evita scroll em polling)
       messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight;
     }
-
-    if (messages.length > 0) {
-      console.log("📨 Total de mensagens:", messages.length);
-    }
-  }, [messages]);
+  }, [messages.length]); // ✅ Depende apenas do tamanho do array, não do conteúdo
 
   // Handle touch events for swipe and pull-to-refresh
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -184,7 +209,7 @@ export const ChatContainer = ({
     }, 1500);
   };
 
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = (text: string, type: string = "TEXT") => {
     if (!activeConversation?.id || !userId || !isConnected) return;
 
     triggerHapticFeedback("light");
@@ -193,7 +218,7 @@ export const ChatContainer = ({
       conversationId: activeConversation.id,
       senderId: Number(userId),
       content: text,
-      type: "TEXT",
+      type: type as any,
     });
   };
 
@@ -274,8 +299,13 @@ export const ChatContainer = ({
               hour: "2-digit",
               minute: "2-digit",
             }),
-            read: msg.isRead,
+            // Mensagem enviada pelo usuário: check azul se isRead === true
+            // Mensagem recebida: nunca mostra check azul
+            read: msg.senderId === Number(userId) && msg.isRead === true,
+            createdAt: msg.createdAt,
           }))}
+          conversationId={activeConversation.id}
+          currentUserId={Number(userId)}
         />
         <TypingIndicator
           isTyping={isOtherTyping}
