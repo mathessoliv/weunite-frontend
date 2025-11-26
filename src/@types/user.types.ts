@@ -18,6 +18,11 @@ export interface User {
   suspendedUntil?: string;
   suspensionReason?: string;
   skills?: { id: number; name: string }[];
+  height?: number;
+  weight?: number;
+  footDomain?: string;
+  position?: string;
+  birthDate?: string;
 }
 
 export interface GetUserByUsername {
@@ -32,4 +37,9 @@ export interface UpdateUser {
   profileImg?: File;
   bannerImg?: File;
   skills?: { id: number; name: string }[];
+  height?: number;
+  weight?: number;
+  footDomain?: string;
+  position?: string;
+  birthDate?: string;
 }

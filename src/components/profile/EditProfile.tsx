@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUpdateProfile } from "@/state/useUsers";
 import {
   updateProfileSchema,
@@ -31,6 +31,14 @@ import {
 import CreateSkill from "../opportunity/skill/CreateSkill";
 import { SelectedSkills } from "../opportunity/skill/SelectedSkills";
 import { Controller } from "react-hook-form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
+import { Separator } from "@/components/ui/separator";
 
 interface EditProfileProps {
   isOpen?: boolean;
@@ -55,8 +63,32 @@ export default function EditProfile({
       media: null,
       skills:
         user?.skills?.map((s) => (typeof s === "string" ? s : s.name)) || [],
+      height: user?.height,
+      weight: user?.weight,
+      footDomain: user?.footDomain,
+      position: user?.position,
+      birthDate: user?.birthDate,
     },
   });
+
+  useEffect(() => {
+    if (isOpen && user) {
+      form.reset({
+        name: user.name,
+        username: user.username,
+        bio: user.bio || "",
+        media: null,
+        skills:
+          user.skills?.map((s) => (typeof s === "string" ? s : s.name)) || [],
+        height: user.height,
+        weight: user.weight,
+        footDomain: user.footDomain,
+        position: user.position,
+        birthDate: user.birthDate,
+      });
+      setPreview(user.profileImg ?? null);
+    }
+  }, [isOpen, user, form]);
 
   const handleFile = (file?: File | null) => {
     if (!file) {
@@ -87,6 +119,11 @@ export default function EditProfile({
         bio: values.bio?.trim(),
         profileImg: values?.media || undefined,
         skills: skillsToSend,
+        height: values.height,
+        weight: values.weight,
+        footDomain: values.footDomain,
+        position: values.position,
+        birthDate: values.birthDate,
       },
       username: user.username,
     });
@@ -100,7 +137,7 @@ export default function EditProfile({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[30em] md:max-w-[40em]">
+      <DialogContent className="sm:max-w-[30em] md:max-w-[40em] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Perfil</DialogTitle>
           <DialogDescription>
@@ -208,33 +245,137 @@ export default function EditProfile({
               />
 
               {user?.role?.toUpperCase() === "ATHLETE" && (
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Habilidades</label>
-                  <Controller
-                    name="skills"
-                    control={form.control}
-                    render={({ field }) => (
-                      <>
-                        <CreateSkill
-                          selectedSkills={field.value || []}
-                          onSkillsChange={field.onChange}
-                        />
-                        {(field.value?.length || 0) > 0 && (
-                          <SelectedSkills
-                            skills={field.value || []}
-                            showRemove={true}
-                            onRemoveSkill={(skillToRemove) => {
-                              const currentSkills = field.value || [];
-                              field.onChange(
-                                currentSkills.filter(
-                                  (s) => s !== skillToRemove,
-                                ),
-                              );
-                            }}
-                            className="mt-2"
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mt-2">
+                    <Separator className="flex-1" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Informações do Atleta
+                    </span>
+                    <Separator className="flex-1" />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Habilidades</label>
+                    <Controller
+                      name="skills"
+                      control={form.control}
+                      render={({ field }) => (
+                        <>
+                          <CreateSkill
+                            selectedSkills={field.value || []}
+                            onSkillsChange={field.onChange}
                           />
-                        )}
-                      </>
+                          {(field.value?.length || 0) > 0 && (
+                            <SelectedSkills
+                              skills={field.value || []}
+                              showRemove={true}
+                              onRemoveSkill={(skillToRemove) => {
+                                const currentSkills = field.value || [];
+                                field.onChange(
+                                  currentSkills.filter(
+                                    (s) => s !== skillToRemove,
+                                  ),
+                                );
+                              }}
+                              className="mt-2"
+                            />
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="height"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Altura (m)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="1.75"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="weight"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Peso (kg)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="70.5"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="footDomain"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pé Dominante</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Direito">Direito</SelectItem>
+                              <SelectItem value="Esquerdo">Esquerdo</SelectItem>
+                              <SelectItem value="Ambos">Ambos</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="position"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Posição</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Atacante" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="birthDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Nascimento</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
                   />
                 </div>

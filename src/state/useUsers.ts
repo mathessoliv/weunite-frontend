@@ -49,6 +49,26 @@ export const useUpdateProfile = () => {
               variables.data.skills !== undefined
                 ? variables.data.skills
                 : user.skills,
+            height:
+              variables.data.height !== undefined
+                ? variables.data.height
+                : user.height,
+            weight:
+              variables.data.weight !== undefined
+                ? variables.data.weight
+                : user.weight,
+            footDomain:
+              variables.data.footDomain !== undefined
+                ? variables.data.footDomain
+                : user.footDomain,
+            position:
+              variables.data.position !== undefined
+                ? variables.data.position
+                : user.position,
+            birthDate:
+              variables.data.birthDate !== undefined
+                ? variables.data.birthDate
+                : user.birthDate,
           });
         }
 

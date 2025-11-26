@@ -14,6 +14,11 @@ export const updateUser = async (data: UpdateUser, username: string) => {
           email: data.email,
           bio: data.bio,
           skills: data.skills,
+          height: data.height,
+          weight: data.weight,
+          footDomain: data.footDomain,
+          position: data.position,
+          birthDate: data.birthDate,
         }),
       ],
       {
