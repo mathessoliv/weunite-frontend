@@ -147,7 +147,7 @@ export default function EditProfile({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[30em] md:max-w-[40em] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[30em] md:max-w-[40em] max-h-[90vh] overflow-y-auto scrollbar-thumb">
         <DialogHeader>
           <DialogTitle>Editar Perfil</DialogTitle>
           <DialogDescription>
@@ -459,12 +459,16 @@ export default function EditProfile({
             </div>
 
             <DialogFooter className="flex flex-row-reverse gap-2 mt-4">
-              <Button type="submit" disabled={editProfile.isPending}>
-                {editProfile.isPending ? "Salvando..." : "Salvar"}
+              <Button variant="outline" type="button">
+                Cancelar
               </Button>
               <DialogClose asChild>
-                <Button variant="outline" type="button">
-                  Cancelar
+                <Button
+                  type="submit"
+                  disabled={editProfile.isPending}
+                  className="bg-third hover:bg-third/80"
+                >
+                  {editProfile.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </DialogClose>
             </DialogFooter>

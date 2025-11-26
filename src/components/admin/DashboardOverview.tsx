@@ -54,7 +54,8 @@ export function DashboardOverview() {
         ]);
 
         if (statsResponse.success && statsResponse.data) {
-          setStats(statsResponse.data.stats);
+          // O backend retorna os dados diretamente, não em data.stats
+          setStats(statsResponse.data.stats || statsResponse.data);
         } else {
           toast.error(statsResponse.error || "Erro ao carregar estatísticas");
         }

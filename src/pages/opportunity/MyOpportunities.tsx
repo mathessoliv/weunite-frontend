@@ -26,7 +26,6 @@ import {
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
   useGetOpportunitiesCompany,
-  useGetOpportunitySubscribers,
   useGetAthleteSubscriptions,
 } from "@/state/useOpportunities";
 import { OpportunitySubscribers } from "@/components/opportunity/OpportunitySubscribers";
@@ -62,12 +61,6 @@ export function MyOpportunities() {
   } = useGetAthleteSubscriptions(Number(user?.id), {
     enabled: isAthlete,
   });
-
-  const { data: subscribersResponse, isLoading: isLoadingSubscribers } =
-    useGetOpportunitySubscribers(
-      Number(selectedOpportunity?.id),
-      !!selectedOpportunity && isCompany,
-    );
 
   const isLoading =
     isLoadingCompanyOpportunities || isLoadingAthleteSubscriptions;
@@ -105,15 +98,17 @@ export function MyOpportunities() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Skeleton className="h-8 w-64 mb-2" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-64" />
-          ))}
+      <div className="flex justify-center w-full pt-4">
+        <div className="max-w-[45em] w-full px-4 py-8">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex flex-col gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-64" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -282,21 +277,15 @@ export function MyOpportunities() {
 
         {isCompany && (
           <Dialog open={isSubscribersOpen} onOpenChange={setIsSubscribersOpen}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[45em] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Atletas Inscritos</DialogTitle>
               </DialogHeader>
 
-              {isLoadingSubscribers ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {[...Array(6)].map((_, i) => (
-                    <Skeleton key={i} className="h-40" />
-                  ))}
-                </div>
-              ) : (
+              {selectedOpportunity && (
                 <OpportunitySubscribers
-                  subscribers={subscribersResponse?.data || []}
-                  opportunityTitle={selectedOpportunity?.title || ""}
+                  opportunityId={selectedOpportunity.id}
+                  opportunityTitle={selectedOpportunity.title || ""}
                 />
               )}
             </DialogContent>

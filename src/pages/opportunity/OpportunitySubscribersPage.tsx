@@ -5,10 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OpportunitySubscribers } from "@/components/opportunity/OpportunitySubscribers";
-import {
-  useGetOpportunities,
-  useGetOpportunitySubscribers,
-} from "@/state/useOpportunities";
+import { useGetOpportunities } from "@/state/useOpportunities";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { getInitials } from "@/utils/getInitials";
 import { getTimeAgo } from "@/hooks/useGetTimeAgo";
@@ -27,15 +24,7 @@ export function OpportunitySubscribersPage() {
     (opp) => opp.id === Number(opportunityId),
   );
 
-  // Buscar candidatos da oportunidade
-  const { data: subscribersData, isLoading: isLoadingSubscribers } =
-    useGetOpportunitySubscribers(
-      Number(opportunityId),
-      !!user?.id && !!opportunityId,
-    );
-  const subscribers = subscribersData?.data || [];
-
-  const isLoading = isLoadingOpportunities || isLoadingSubscribers;
+  const isLoading = isLoadingOpportunities;
 
   if (isLoading) {
     return (
@@ -96,83 +85,85 @@ export function OpportunitySubscribersPage() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl">
-      {/* Botão Voltar */}
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Voltar
-      </Button>
+    <div className="flex justify-center w-full pt-4">
+      <div className="max-w-[45em] w-full px-4">
+        {/* Botão Voltar */}
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
+        </Button>
 
-      {/* Card de Detalhes da Oportunidade */}
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex items-start gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={opportunity.company?.profileImg} />
-              <AvatarFallback className="bg-third/10 text-third font-semibold">
-                {companyInitials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <CardTitle className="text-2xl mb-2">
-                {opportunity.title}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mb-3">
-                {opportunity.company?.username} • Publicado há{" "}
-                {getTimeAgo(opportunity.createdAt)}
-              </p>
+        {/* Card de Detalhes da Oportunidade */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-start gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={opportunity.company?.profileImg} />
+                <AvatarFallback className="bg-third/10 text-third font-semibold">
+                  {companyInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <CardTitle className="text-2xl mb-2">
+                  {opportunity.title}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {opportunity.company?.username} • Publicado há{" "}
+                  {getTimeAgo(opportunity.createdAt)}
+                </p>
 
-              {/* Informações básicas */}
-              <div className="flex flex-wrap gap-4 text-sm mb-4">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{opportunity.location}</span>
+                {/* Informações básicas */}
+                <div className="flex flex-wrap gap-4 text-sm mb-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{opportunity.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>Até {opportunityDate}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold">
+                      {opportunity.subscribersCount || 0}{" "}
+                      {opportunity.subscribersCount === 1
+                        ? "candidato"
+                        : "candidatos"}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Até {opportunityDate}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-semibold">
-                    {opportunity.subscribersCount || 0}{" "}
-                    {opportunity.subscribersCount === 1
-                      ? "candidato"
-                      : "candidatos"}
-                  </span>
-                </div>
+
+                {/* Habilidades */}
+                {opportunity.skills && opportunity.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {opportunity.skills.map((skill) => (
+                      <Badge key={skill.id} variant="secondary">
+                        {skill.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              {/* Habilidades */}
-              {opportunity.skills && opportunity.skills.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {opportunity.skills.map((skill) => (
-                    <Badge key={skill.id} variant="secondary">
-                      {skill.name}
-                    </Badge>
-                  ))}
-                </div>
-              )}
             </div>
-          </div>
-        </CardHeader>
+          </CardHeader>
 
-        {/* Descrição */}
-        {opportunity.description && (
-          <CardContent>
-            <h3 className="text-lg font-semibold mb-2">Descrição</h3>
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              {opportunity.description}
-            </p>
-          </CardContent>
-        )}
-      </Card>
+          {/* Descrição */}
+          {opportunity.description && (
+            <CardContent>
+              <h3 className="text-lg font-semibold mb-2">Descrição</h3>
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {opportunity.description}
+              </p>
+            </CardContent>
+          )}
+        </Card>
 
-      {/* Lista de Candidatos */}
-      <OpportunitySubscribers
-        subscribers={subscribers}
-        opportunityTitle={opportunity.title}
-      />
+        {/* Lista de Candidatos */}
+        <OpportunitySubscribers
+          opportunityId={Number(opportunityId)}
+          opportunityTitle={opportunity.title}
+        />
+      </div>
     </div>
   );
 }
