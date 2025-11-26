@@ -25,6 +25,7 @@ import {
   useCheckIsSubscribed,
 } from "@/state/useOpportunities";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface OpportunityDescriptionProps {
   isOpen?: boolean;
@@ -63,10 +64,31 @@ export function OpportunityDescription({
     },
   );
 
+  // Determina se a oportunidade já expirou (compara apenas a data, sem horário)
+  const isExpired = (() => {
+    try {
+      if (!opportunity.dateEnd) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deadline = new Date(opportunity.dateEnd);
+      deadline.setHours(0, 0, 0, 0);
+      return deadline < today;
+    } catch (e) {
+      return false;
+    }
+  })();
+
   const subscribersCount = opportunity.subscribersCount || 0;
 
   const handleApply = () => {
     if (!user?.id || !isAthlete || toggleSubscriber.isPending) return;
+
+    if (isExpired) {
+      toast.error(
+        "Não é possível candidatar-se: prazo da oportunidade expirou.",
+      );
+      return;
+    }
 
     toggleSubscriber.mutate({
       athleteId: Number(user.id),
@@ -143,7 +165,10 @@ export function OpportunityDescription({
                   <Button
                     onClick={handleApply}
                     className="w-full bg-third hover:bg-third/90"
-                    disabled={toggleSubscriber.isPending}
+                    disabled={toggleSubscriber.isPending || isExpired}
+                    title={
+                      isExpired ? "Prazo da oportunidade expirou" : undefined
+                    }
                   >
                     {toggleSubscriber.isPending
                       ? "Processando..."
@@ -251,7 +276,10 @@ export function OpportunityDescription({
                   <Button
                     onClick={handleApply}
                     className="w-full bg-third hover:bg-third/90"
-                    disabled={toggleSubscriber.isPending}
+                    disabled={toggleSubscriber.isPending || isExpired}
+                    title={
+                      isExpired ? "Prazo da oportunidade expirou" : undefined
+                    }
                   >
                     {toggleSubscriber.isPending
                       ? "Processando..."
