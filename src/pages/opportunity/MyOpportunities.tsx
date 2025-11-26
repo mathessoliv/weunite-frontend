@@ -33,10 +33,12 @@ import { OpportunitySubscribers } from "@/components/opportunity/OpportunitySubs
 import OpportunityDetailModal from "@/components/opportunity/OpportunityDetailModal";
 import type { Opportunity } from "@/@types/opportunity.types";
 import { useBreakpoints } from "@/hooks/useBreakpoints";
+import { useNavigate } from "react-router-dom";
 
 export function MyOpportunities() {
   const { user } = useAuthStore();
   const { isMobile } = useBreakpoints();
+  const navigate = useNavigate();
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<Opportunity | null>(null);
   const [isSubscribersOpen, setIsSubscribersOpen] = useState(false);
@@ -98,8 +100,7 @@ export function MyOpportunities() {
   };
 
   const handleViewOpportunity = (opportunity: Opportunity) => {
-    setSelectedOpportunity(opportunity);
-    setIsDetailOpen(true);
+    navigate(`/opportunity?opportunityId=${opportunity.id}`);
   };
 
   if (isLoading) {
@@ -120,7 +121,47 @@ export function MyOpportunities() {
 
   if (!opportunities || opportunities.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center w-full pt-4">
+        <div className="max-w-[45em] w-full px-4 py-8 pb-[5em]">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">
+              {isCompany ? "Minhas Oportunidades" : "Minhas Candidaturas"}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {isCompany
+                ? "Gerencie suas oportunidades e veja quem se inscreveu"
+                : "Acompanhe as oportunidades em que você se candidatou"}
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="w-full">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                {isCompany ? (
+                  <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
+                ) : (
+                  <UserCheck className="h-16 w-16 text-muted-foreground mb-4" />
+                )}
+                <p className="text-lg font-medium text-muted-foreground mb-2">
+                  {isCompany
+                    ? "Você ainda não criou nenhuma oportunidade"
+                    : "Você ainda não se candidatou a nenhuma oportunidade"}
+                </p>
+                <p className="text-sm text-muted-foreground text-center max-w-md">
+                  {isCompany
+                    ? "Crie sua primeira oportunidade para começar a receber inscrições de atletas interessados"
+                    : "Explore as oportunidades disponíveis e candidate-se às que mais combinam com você"}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-center w-full pt-4">
+      <div className="max-w-[45em] w-full px-4 py-8 pb-[5em]">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">
             {isCompany ? "Minhas Oportunidades" : "Minhas Candidaturas"}
@@ -131,181 +172,146 @@ export function MyOpportunities() {
               : "Acompanhe as oportunidades em que você se candidatou"}
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="w-full">
-            <CardContent className="flex flex-col items-center justify-center py-16">
-              {isCompany ? (
-                <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
-              ) : (
-                <UserCheck className="h-16 w-16 text-muted-foreground mb-4" />
-              )}
-              <p className="text-lg font-medium text-muted-foreground mb-2">
-                {isCompany
-                  ? "Você ainda não criou nenhuma oportunidade"
-                  : "Você ainda não se candidatou a nenhuma oportunidade"}
-              </p>
-              <p className="text-sm text-muted-foreground text-center max-w-md">
-                {isCompany
-                  ? "Crie sua primeira oportunidade para começar a receber inscrições de atletas interessados"
-                  : "Explore as oportunidades disponíveis e candidate-se às que mais combinam com você"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          {isCompany ? "Minhas Oportunidades" : "Minhas Candidaturas"}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {isCompany
-            ? "Gerencie suas oportunidades e veja quem se inscreveu"
-            : "Acompanhe as oportunidades em que você se candidatou"}
-        </p>
-      </div>
+        <div className="flex flex-col gap-4">
+          {opportunities.map((opportunity: Opportunity) => {
+            const subscribersCount = opportunity.subscribersCount || 0;
+            // Protege parsing de data inválida
+            const deadlineDate = opportunity.dateEnd
+              ? new Date(opportunity.dateEnd).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "-";
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {opportunities.map((opportunity: Opportunity) => {
-          const subscribersCount = opportunity.subscribersCount || 0;
-          // Protege parsing de data inválida
-          const deadlineDate = opportunity.dateEnd
-            ? new Date(opportunity.dateEnd).toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })
-            : "-";
+            return (
+              <Card
+                key={opportunity.id}
+                className="hover:shadow-lg transition-shadow"
+              >
+                <CardHeader>
+                  <CardTitle className="line-clamp-2">
+                    {opportunity.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2">
+                    {opportunity.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isAthlete && opportunity.company && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Building2 className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">
+                        {opportunity.company.username}
+                      </span>
+                    </div>
+                  )}
 
-          return (
-            <Card
-              key={opportunity.id}
-              className="hover:shadow-lg transition-shadow"
-            >
-              <CardHeader>
-                <CardTitle className="line-clamp-2">
-                  {opportunity.title}
-                </CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {opportunity.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isAthlete && opportunity.company && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Building2 className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">
-                      {opportunity.company.username}
-                    </span>
+                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{opportunity.location}</span>
                   </div>
-                )}
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{opportunity.location}</span>
-                </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span>Prazo: {deadlineDate}</span>
+                  </div>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4 flex-shrink-0" />
-                  <span>Prazo: {deadlineDate}</span>
-                </div>
-
-                {opportunity.skills && opportunity.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {opportunity.skills
-                      .slice(0, 3)
-                      .map((skill: { id: number; name: string }) => (
-                        <Badge key={skill.id} variant="secondary">
-                          {skill.name}
+                  {opportunity.skills && opportunity.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {opportunity.skills
+                        .slice(0, 3)
+                        .map((skill: { id: number; name: string }) => (
+                          <Badge key={skill.id} variant="secondary">
+                            {skill.name}
+                          </Badge>
+                        ))}
+                      {opportunity.skills.length > 3 && (
+                        <Badge variant="secondary">
+                          +{opportunity.skills.length - 3}
                         </Badge>
-                      ))}
-                    {opportunity.skills.length > 3 && (
-                      <Badge variant="secondary">
-                        +{opportunity.skills.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
 
-                <div className="pt-4 border-t space-y-2">
-                  {isCompany && (
-                    <>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-5 w-5 text-primary" />
-                          <span className="font-semibold text-lg">
-                            {subscribersCount}
+                  <div className="pt-4 border-t space-y-2">
+                    {isCompany && (
+                      <>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-primary" />
+                            <span className="font-semibold text-lg">
+                              {subscribersCount}
+                            </span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {subscribersCount === 1 ? "inscrito" : "inscritos"}
                           </span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {subscribersCount === 1 ? "inscrito" : "inscritos"}
-                        </span>
-                      </div>
 
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={() => handleViewSubscribers(opportunity)}
+                          disabled={subscribersCount === 0}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Ver Inscritos
+                        </Button>
+                      </>
+                    )}
+
+                    {isAthlete && (
                       <Button
                         className="w-full"
+                        size="sm"
                         variant="outline"
-                        onClick={() => handleViewSubscribers(opportunity)}
-                        disabled={subscribersCount === 0}
+                        onClick={() => handleViewOpportunity(opportunity)}
                       >
-                        <Users className="h-4 w-4 mr-2" />
-                        Ver Inscritos
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        Ver Detalhes
                       </Button>
-                    </>
-                  )}
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-                  {isAthlete && (
-                    <Button
-                      className="w-full"
-                      variant="outline"
-                      onClick={() => handleViewOpportunity(opportunity)}
-                    >
-                      <Briefcase className="h-4 w-4 mr-2" />
-                      Ver Detalhes
-                    </Button>
-                  )}
+        {isCompany && (
+          <Dialog open={isSubscribersOpen} onOpenChange={setIsSubscribersOpen}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Atletas Inscritos</DialogTitle>
+              </DialogHeader>
+
+              {isLoadingSubscribers ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {[...Array(6)].map((_, i) => (
+                    <Skeleton key={i} className="h-40" />
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              ) : (
+                <OpportunitySubscribers
+                  subscribers={subscribersResponse?.data || []}
+                  opportunityTitle={selectedOpportunity?.title || ""}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {isAthlete && selectedOpportunity && (
+          <OpportunityDetailModal
+            opportunity={selectedOpportunity}
+            isOpen={isDetailOpen}
+            onOpenChange={setIsDetailOpen}
+            isMobile={isMobile}
+          />
+        )}
       </div>
-
-      {isCompany && (
-        <Dialog open={isSubscribersOpen} onOpenChange={setIsSubscribersOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Atletas Inscritos</DialogTitle>
-            </DialogHeader>
-
-            {isLoadingSubscribers ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-40" />
-                ))}
-              </div>
-            ) : (
-              <OpportunitySubscribers
-                subscribers={subscribersResponse?.data || []}
-                opportunityTitle={selectedOpportunity?.title || ""}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {isAthlete && selectedOpportunity && (
-        <OpportunityDetailModal
-          opportunity={selectedOpportunity}
-          isOpen={isDetailOpen}
-          onOpenChange={setIsDetailOpen}
-          isMobile={isMobile}
-        />
-      )}
     </div>
   );
 }
