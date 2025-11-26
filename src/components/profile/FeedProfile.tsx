@@ -93,7 +93,7 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
 
       {activeTab === "Sobre" && (
         <div className="flex flex-col items-center justify-center mt-3">
-          <AboutProfile />
+          <AboutProfile user={displayUser} />
         </div>
       )}
     </div>

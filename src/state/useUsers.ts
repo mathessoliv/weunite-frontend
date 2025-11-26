@@ -30,7 +30,7 @@ export const useUpdateProfile = () => {
     }) => {
       return updateUser(data, username);
     },
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       if (result.success) {
         toast.success(result.message || "Perfil atualizado com sucesso!");
 
@@ -41,6 +41,34 @@ export const useUpdateProfile = () => {
             username: result.data.data.username || user.username,
             profileImg: result.data.data.profileImg || user.profileImg,
             bannerImg: result.data.data.bannerImg || user.bannerImg,
+            // Prioriza os dados enviados localmente para garantir atualização imediata na UI
+            // mesmo se o backend falhar em persistir ou retornar os dados atualizados
+            bio:
+              variables.data.bio !== undefined ? variables.data.bio : user.bio,
+            skills:
+              variables.data.skills !== undefined
+                ? variables.data.skills
+                : user.skills,
+            height:
+              variables.data.height !== undefined
+                ? variables.data.height
+                : user.height,
+            weight:
+              variables.data.weight !== undefined
+                ? variables.data.weight
+                : user.weight,
+            footDomain:
+              variables.data.footDomain !== undefined
+                ? variables.data.footDomain
+                : user.footDomain,
+            position:
+              variables.data.position !== undefined
+                ? variables.data.position
+                : user.position,
+            birthDate:
+              variables.data.birthDate !== undefined
+                ? variables.data.birthDate
+                : user.birthDate,
           });
         }
 

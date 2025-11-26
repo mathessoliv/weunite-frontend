@@ -63,7 +63,6 @@ export function MyOpportunities() {
 
   const { data: subscribersResponse, isLoading: isLoadingSubscribers } =
     useGetOpportunitySubscribers(
-      Number(user?.id),
       Number(selectedOpportunity?.id),
       !!selectedOpportunity && isCompany,
     );

@@ -22,7 +22,6 @@ import {
   EyeOff,
   Eye,
 } from "lucide-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { Checkbox } from "../ui/checkbox";
 import { signUpCompanySchema } from "@/schemas/auth/signUp.schema";
 import { useNavigate } from "react-router-dom";

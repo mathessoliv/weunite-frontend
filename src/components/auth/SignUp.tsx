@@ -22,7 +22,6 @@ import {
   Eye,
   Loader2,
 } from "lucide-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { Checkbox } from "../ui/checkbox";
 import { usePasswordStrength } from "@/hooks/usePasswordStrength";
 import { useState } from "react";

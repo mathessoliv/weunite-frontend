@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from "../ui/form";
 import { useState } from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginSchema } from "@/schemas/auth/login.schema";
 import { useAuthStore } from "@/stores/useAuthStore";

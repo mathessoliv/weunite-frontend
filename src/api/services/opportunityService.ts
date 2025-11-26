@@ -149,7 +149,6 @@ export const getOpportunitiesRequest = async () => {
 };
 
 export const getOpportunitySubscribersRequest = async (
-  companyId: number,
   opportunityId: number,
 ) => {
   try {

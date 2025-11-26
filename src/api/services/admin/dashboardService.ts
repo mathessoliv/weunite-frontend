@@ -24,9 +24,11 @@ export const getDashboardStatsRequest = async () => {
   }
 };
 
-export const getMonthlyActivityRequest = async () => {
+export const getMonthlyActivityRequest = async (months?: number) => {
   try {
-    const response = await axios.get(`/admin/stats/monthly`);
+    const response = await axios.get(`/admin/stats/monthly`, {
+      params: { months },
+    });
     return {
       success: true,
       data: response.data,
