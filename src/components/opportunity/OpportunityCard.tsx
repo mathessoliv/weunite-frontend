@@ -41,7 +41,7 @@ import {
 
 import { getTimeAgo } from "@/hooks/useGetTimeAgo";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getInitials } from "@/utils/getInitials";
 import { useNavigate } from "react-router-dom";
 import { OpportunityDescription } from "./DescriptionOpportunity";
@@ -52,8 +52,11 @@ import {
   useDeleteOpportunity,
   useToggleSubscriber,
   useCheckIsSubscribed,
+  useToggleSavedOpportunity,
+  useCheckIsSaved,
 } from "@/state/useOpportunities";
 import { ReportModal } from "@/components/shared/ReportModal";
+import { toast } from "sonner";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -77,7 +80,34 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   );
   const isSubscribed = isSubscribedData?.data || false;
 
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  // Verificar se está salva (somente para atletas)
+  const { data: isSavedData } = useCheckIsSaved(
+    Number(user?.id),
+    Number(opportunity.id),
+    isAthlete,
+  );
+  const isSaved = isSavedData?.data || false;
+
+  // Debug: Log do status de salvamento
+  useEffect(() => {
+    if (isAthlete && user?.id) {
+      console.log(`📌 Opportunity ${opportunity.id} - isSaved status:`, {
+        isSavedData,
+        isSaved,
+        opportunityTitle: opportunity.title,
+      });
+    }
+  }, [
+    isSavedData,
+    isSaved,
+    isAthlete,
+    user?.id,
+    opportunity.id,
+    opportunity.title,
+  ]);
+
+  const toggleSavedOpportunity = useToggleSavedOpportunity();
+
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditOpportunityOpen, setIsEditOpportunityOpen] = useState(false);
@@ -135,7 +165,39 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsBookmarked(!isBookmarked);
+
+    if (!user?.id || !isAthlete || toggleSavedOpportunity.isPending) return;
+
+    console.log("🔖 Toggling saved opportunity:", {
+      athleteId: Number(user.id),
+      opportunityId: Number(opportunity.id),
+      currentStatus: isSaved,
+    });
+
+    toggleSavedOpportunity.mutate(
+      {
+        athleteId: Number(user.id),
+        opportunityId: Number(opportunity.id),
+      },
+      {
+        onSuccess: (response) => {
+          console.log("✅ Toggle success response:", response);
+
+          // A resposta vem com a estrutura: { success, data, isSaved, message }
+          if (response.success && response.isSaved) {
+            toast.success(
+              response.message || "Oportunidade salva com sucesso!",
+            );
+          } else if (response.success && !response.isSaved) {
+            toast.info(response.message || "Oportunidade removida dos salvos");
+          }
+        },
+        onError: (error) => {
+          console.error("❌ Toggle error:", error);
+          toast.error("Erro ao salvar/remover oportunidade");
+        },
+      },
+    );
   };
 
   const handleDropdownClick = (e: React.MouseEvent) => {
@@ -350,7 +412,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
               <div onClick={handleBookmark} className="hover:cursor-pointer">
                 <Bookmark
                   className={`h-5 w-5 transition-colors ${
-                    isBookmarked
+                    isSaved
                       ? "text-third fill-third"
                       : "text-muted-foreground hover:text-third"
                   }`}

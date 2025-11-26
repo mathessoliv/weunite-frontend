@@ -14,10 +14,14 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import type { Opportunity } from "@/@types/opportunity.types";
-import { useNavigate } from "react-router-dom";
 import { MapPin, Calendar, Briefcase, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuthStore } from "@/stores/useAuthStore";
+import {
+  useToggleSubscriber,
+  useCheckIsSubscribed,
+} from "@/state/useOpportunities";
 
 interface OpportunityDetailModalProps {
   opportunity: Opportunity;
@@ -32,11 +36,27 @@ export default function OpportunityDetailModal({
   onOpenChange,
   isMobile = false,
 }: OpportunityDetailModalProps) {
-  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const toggleSubscriber = useToggleSubscriber();
 
-  const handleGoToOpportunity = () => {
-    onOpenChange(false);
-    navigate(`/opportunity`);
+  const isOwner = opportunity.company?.id === user?.id;
+  const isAthlete = user?.role === "ATHLETE";
+
+  // Verificar se está inscrito (somente para atletas que não são donos)
+  const { data: isSubscribedData } = useCheckIsSubscribed(
+    Number(user?.id),
+    Number(opportunity.id),
+    isAthlete && !isOwner,
+  );
+  const isSubscribed = isSubscribedData?.data || false;
+
+  const handleToggleSubscribe = async () => {
+    if (!user?.id || !isAthlete || toggleSubscriber.isPending) return;
+
+    toggleSubscriber.mutate({
+      athleteId: Number(user.id),
+      opportunityId: Number(opportunity.id),
+    });
   };
 
   const OpportunityContent = () => (
@@ -50,7 +70,7 @@ export default function OpportunityDetailModal({
           <div className="flex items-center gap-2 text-muted-foreground">
             <Briefcase className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm font-medium">
-              {opportunity.company.name}
+              {opportunity.company.username}
             </span>
           </div>
         )}
@@ -117,16 +137,24 @@ export default function OpportunityDetailModal({
         </div>
       )}
 
-      {/* Botão de ação */}
-      <div className="pt-2 sm:pt-4">
-        <Button
-          onClick={handleGoToOpportunity}
-          className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold"
-          size="lg"
-        >
-          Ir para Oportunidade
-        </Button>
-      </div>
+      {/* Botão de candidatura (apenas para atletas que não são donos) */}
+      {isAthlete && !isOwner && (
+        <div className="pt-2 sm:pt-4">
+          <Button
+            onClick={handleToggleSubscribe}
+            disabled={toggleSubscriber.isPending}
+            className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold"
+            size="lg"
+            variant={isSubscribed ? "outline" : "default"}
+          >
+            {toggleSubscriber.isPending
+              ? "Processando..."
+              : isSubscribed
+                ? "Remover Candidatura"
+                : "Candidatar-se"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 
@@ -145,7 +173,7 @@ export default function OpportunityDetailModal({
               Veja todas as informações sobre esta oportunidade
             </SheetDescription>
           </SheetHeader>
-          <div className="overflow-y-auto max-h-[calc(92vh-160px)] sm:max-h-[calc(90vh-160px)] pr-2">
+          <div className="overflow-y-auto max-h-[calc(92vh-8rem)] py-4">
             <OpportunityContent />
           </div>
         </SheetContent>

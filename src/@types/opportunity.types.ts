@@ -40,3 +40,19 @@ export interface Opportunity {
   company?: User;
   subscribersCount?: number;
 }
+
+export interface SavedOpportunity {
+  id: number;
+  opportunityId: number;
+  title: string;
+  description: string;
+  location: string;
+  dateEnd: Date;
+  skills?: Skill[];
+  savedAt: Date;
+  company?: {
+    id: number;
+    name: string;
+    profileImage?: string;
+  };
+}
