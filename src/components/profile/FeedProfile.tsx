@@ -34,7 +34,12 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const comments = dataComments?.data || [];
 
   const userPosts =
-    posts.filter((post: PostType) => post.user?.id === displayUser?.id) || [];
+    posts.filter((post: PostType) => {
+      if (post.repostedBy) {
+        return post.repostedBy.id === displayUser?.id;
+      }
+      return post.user?.id === displayUser?.id;
+    }) || [];
   const userComments =
     comments.filter(
       (comment: CommentType) => comment.user?.id === displayUser?.id,
