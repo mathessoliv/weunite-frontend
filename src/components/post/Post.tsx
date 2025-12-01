@@ -195,7 +195,14 @@ export default function Post({ post }: { post: Post }) {
               </span>
             )}
           </div>
-        ) : null}
+        ) : (
+          isReposted && (
+            <div className="px-4 pt-2 flex items-center gap-2 text-xs text-muted-foreground font-medium">
+              <Repeat2 className="h-3 w-3" />
+              <span>Você repostou</span>
+            </div>
+          )
+        )}
 
         <div className="relative">
           {post.repostedBy && (

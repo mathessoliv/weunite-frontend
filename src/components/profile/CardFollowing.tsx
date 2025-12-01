@@ -4,6 +4,8 @@ import { Button } from "../ui/button";
 import { CardContent } from "../ui/card";
 import type { User } from "@/@types/user.types";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useGetFollow, useFollowAndUnfollow } from "@/state/useFollow";
 
 interface CardFollowingProps {
   user: User;
@@ -15,6 +17,21 @@ export default function CardFollowing({
   onUserClick,
 }: CardFollowingProps) {
   const initials = getInitials(user?.name);
+  const { user: currentUser } = useAuthStore();
+
+  const followerId = currentUser?.id ? Number(currentUser.id) : 0;
+  const followedId = user?.id ? Number(user.id) : 0;
+
+  const { data: followData, isLoading } = useGetFollow(followerId, followedId);
+  const { mutate: followAndUnfollow, isPending } = useFollowAndUnfollow();
+
+  const isFollowing = followData?.success && followData?.data;
+  const isMe = followerId === followedId;
+
+  const handleFollowToggle = () => {
+    if (!currentUser) return;
+    followAndUnfollow({ followerId, followedId });
+  };
 
   return (
     <CardContent className="flex mt-5">
@@ -38,11 +55,18 @@ export default function CardFollowing({
           <p className="text-[#a1a1a1] text-xs">{user?.name}</p>
         </div>
       </Link>
-      <div className="ml-auto flex items-center">
-        <Button variant="outline" className="text-xs font-normal">
-          Deixar de seguir
-        </Button>
-      </div>
+      {!isMe && currentUser && (
+        <div className="ml-auto flex items-center">
+          <Button
+            variant={isFollowing ? "outline" : "default"}
+            className="text-xs font-normal"
+            onClick={handleFollowToggle}
+            disabled={isPending || isLoading}
+          >
+            {isFollowing ? "Deixar de seguir" : "Seguir"}
+          </Button>
+        </div>
+      )}
     </CardContent>
   );
 }
