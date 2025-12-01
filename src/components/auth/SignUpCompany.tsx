@@ -79,12 +79,12 @@ export function SignUpCompany({
   useAuthMessages();
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col">
       <div className="flex justify-center">
         <SafeLottie
           src="https://lottie.host/a06a613a-efd2-4dbd-96d0-2f4fd7344792/0jYYhWcj4H.lottie"
-          width={200}
-          height={200}
+          width={110}
+          height={110}
         />
       </div>
 
@@ -96,10 +96,10 @@ export function SignUpCompany({
               Preencha os dados abaixo para começar
             </p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-1">
             <Form {...form}>
               <form
-                className="space-y-3"
+                className="space-y-4"
                 onSubmit={form.handleSubmit(onSubmit)}
               >
                 <FormField

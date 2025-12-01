@@ -48,8 +48,8 @@ export function Login({
       <div className="flex flex-col items-center">
         <SafeLottie
           src="https://lottie.host/5ce60653-911c-4bcc-b385-b8be5f43b51e/OGOTw3OGfF.lottie"
-          width={200}
-          height={200}
+          width={130}
+          height={130}
         />
       </div>
 

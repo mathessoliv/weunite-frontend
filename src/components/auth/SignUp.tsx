@@ -61,12 +61,12 @@ export function SignUp({
 
   useAuthMessages();
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col space-y-1">
       <div className="flex justify-center">
         <SafeLottie
           src="https://lottie.host/a06a613a-efd2-4dbd-96d0-2f4fd7344792/0jYYhWcj4H.lottie"
-          width={200}
-          height={200}
+          width={130}
+          height={130}
         />
       </div>
 
