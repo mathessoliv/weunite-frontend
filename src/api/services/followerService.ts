@@ -77,8 +77,8 @@ export const getFollowRequest = async (data: GetFollow) => {
     );
     return {
       success: true,
-      data: response.data,
-      message: response.data.message || "Follow consultado com sucesso",
+      data: response.data || null,
+      message: response.data?.message || "Follow consultado com sucesso",
       error: null,
     };
   } catch (err) {
