@@ -29,6 +29,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthMessages } from "@/hooks/useAuthMessages";
 import { useState } from "react";
 import { SafeLottie } from "../shared/SafeLottie";
+import { TermsModal } from "../shared/TermsModal";
 
 const formatCNPJ = (value: string) => {
   const numbers = value.replace(/\D/g, "");
@@ -66,6 +67,7 @@ export function SignUpCompany({
 
   const { signup, loading } = useAuthStore();
   const navigate = useNavigate();
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   async function onSubmit(values: z.infer<typeof signUpCompanySchema>) {
     const result = await signup(values);
@@ -232,15 +234,17 @@ export function SignUpCompany({
 
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="terms" required />
                     <label
                       htmlFor="terms"
                       className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       Aceitar{" "}
-                      <a href="" className="underline decoration-solid">
+                      <span
+                        className="underline decoration-solid text-primary hover:text-primary/80 cursor-pointer"
+                        onClick={() => setIsTermsModalOpen(true)}
+                      >
                         termos e condições
-                      </a>
+                      </span>
                     </label>
                   </div>
 
@@ -267,6 +271,11 @@ export function SignUpCompany({
           </div>
         </CardContent>
       </Card>
+
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onOpenChange={setIsTermsModalOpen}
+      />
     </div>
   );
 }

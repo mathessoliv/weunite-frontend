@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthMessages } from "@/hooks/useAuthMessages";
 import { signUpSchema } from "@/schemas/auth/signUp.schema";
 import { SafeLottie } from "../shared/SafeLottie";
+import { TermsModal } from "../shared/TermsModal";
 
 export function SignUp({
   setCurrentTab,
@@ -47,6 +48,7 @@ export function SignUp({
     },
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const { signup, loading } = useAuthStore();
   const password = form.watch("password");
   const progress = usePasswordStrength(password);
@@ -194,9 +196,12 @@ export function SignUp({
                       className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       Aceitar{" "}
-                      <a href="" className="underline decoration-solid">
+                      <span
+                        className="underline decoration-solid text-primary hover:text-primary/80 cursor-pointer"
+                        onClick={() => setIsTermsModalOpen(true)}
+                      >
                         termos e condições
-                      </a>
+                      </span>
                     </label>
                   </div>
 
@@ -219,6 +224,11 @@ export function SignUp({
           </div>
         </CardContent>
       </Card>
+
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onOpenChange={setIsTermsModalOpen}
+      />
     </div>
   );
 }

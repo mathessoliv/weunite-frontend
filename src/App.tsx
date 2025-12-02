@@ -11,6 +11,7 @@ import { WebSocketProvider } from "./contexts/WebSocketContext";
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 import { OnboardingWrapper } from "./components/onboarding/OnboardingWrapper";
 import CommentsModalManager from "@/components/comments/CommentsModalManager";
+import TermsOfUse from "./pages/legal/TermsOfUse";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <CommentsModalManager />
           <OnboardingWrapper />
           <Routes>
+            <Route path="/terms" element={<TermsOfUse />} />
             <Route path="/auth/*" element={<AuthRoutes />} />
             <Route path="/home/*" element={<HomeRoutes />} />
             <Route path="/profile/*" element={<ProfileRoutes />} />
