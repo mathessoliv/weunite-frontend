@@ -49,7 +49,7 @@ import { useToggleLikeComment, useCommentLikes } from "@/state/useLikes";
 import { useEffect } from "react";
 import { ReportModal } from "@/components/shared/ReportModal";
 
-const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
+const actions = [{ icon: Heart }];
 
 export default function Comment({ comment }: { comment: Comment }) {
   const { user } = useAuthStore();
@@ -127,8 +127,8 @@ export default function Comment({ comment }: { comment: Comment }) {
       />
 
       {/* wrapper with id to allow scrolling/highlight from outside */}
-      <div id={`comment-${comment.id}`}>
-        <Card className="w-[95vw] max-w-[42em] bg-red shadow-none border-0 border-b rounded-none border-foreground/30">
+      <div id={`comment-${comment.id}`} className="w-full">
+        <Card className="w-full max-w-[42em] mx-auto bg-red shadow-none border-0 border-b rounded-none border-foreground/30">
           <CardHeader className="flex flex-row items-center gap-2 mb-[0.5em]">
             <Avatar className="hover:cursor-pointer h-[2.8em] w-[2.8em]">
               <AvatarImage src={comment.user.profileImg} alt="profile image" />
@@ -234,8 +234,7 @@ export default function Comment({ comment }: { comment: Comment }) {
           <CardFooter className="flex flex-col mt-[-20px]">
             <div className="flex justify-between w-full mb-3">
               <span className="text-sm text-muted-foreground">
-                {likesCount} curtidas • {comment.comments.length || 0}{" "}
-                comentários
+                {likesCount} curtidas
               </span>
             </div>
 
@@ -260,12 +259,6 @@ export default function Comment({ comment }: { comment: Comment }) {
                     />
                   </div>
                 ))}
-              </CardAction>
-
-              <CardAction className="flex items-right gap-2 hover:cursor-pointer">
-                <div>
-                  <Bookmark className="h-5 w-5 text-muted-foreground varient-ghost" />
-                </div>
               </CardAction>
             </div>
           </CardFooter>

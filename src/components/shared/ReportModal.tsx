@@ -36,7 +36,7 @@ const POST_REPORT_REASONS = [
   { value: "fake_profile", label: "Perfil falso" },
   { value: "copyright_violation", label: "Violação de direitos autorais" },
   { value: "violence", label: "Violência ou ameaças" },
-  { value: "hate_speech", label: "Discurso de ódio" },
+  { value: "hate_speech", label: "Discurso de ódio e preconceito" },
   { value: "misinformation", label: "Desinformação" },
   { value: "other", label: "Outros" },
 ];
@@ -45,7 +45,7 @@ const COMMENT_REPORT_REASONS = [
   { value: "spam", label: "Spam ou conteúdo enganoso" },
   { value: "harassment", label: "Assédio ou bullying" },
   { value: "inappropriate_content", label: "Conteúdo inadequado ou ofensivo" },
-  { value: "hate_speech", label: "Discurso de ódio" },
+  { value: "hate_speech", label: "Discurso de ódio e preconceito" },
   { value: "misinformation", label: "Desinformação" },
   { value: "other", label: "Outros" },
 ];
