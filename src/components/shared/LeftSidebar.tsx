@@ -59,7 +59,7 @@ export function LeftSidebar() {
   const initials = getInitials(user?.username);
 
   const userId = user?.id;
-  const { subscribeToNotifications } = useWebSocket();
+  const { subscribeToNotifications, isConnected } = useWebSocket();
 
   const { data: unreadCountData } = useGetUnreadCount(Number(userId) || 0);
   const unreadCount = unreadCountData?.success
@@ -138,16 +138,23 @@ export function LeftSidebar() {
     }
   }, [isSearchOpen, state, setOpen]);
 
-  // Subscribe to WebSocket notifications
+  // Subscribe to WebSocket notifications (só quando conectado)
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !isConnected) return;
 
+    console.log(
+      "🔔 Inscrevendo em notificações WebSocket para usuário:",
+      userId,
+    );
     const unsubscribe = subscribeToNotifications(Number(userId));
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribe) {
+        console.log("🔕 Desinscrevendo de notificações WebSocket");
+        unsubscribe();
+      }
     };
-  }, [userId, subscribeToNotifications]);
+  }, [userId, isConnected, subscribeToNotifications]);
 
   useEffect(() => {
     if (isSmallDesktop && !previsDesktop.current) {

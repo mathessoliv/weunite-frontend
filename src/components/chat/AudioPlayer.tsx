@@ -115,7 +115,7 @@ export const AudioPlayer = ({
         )}
       </button>
 
-      <div className="flex flex-col flex-1 gap-1 min-w-0">
+      <div className="flex flex-col flex-1 gap-1 min-w-0 justify-center -mb-3">
         <input
           type="range"
           min={0}

@@ -27,6 +27,8 @@ const GROUPABLE_TYPES: NotificationType[] = [
   "COMMENT_LIKE",
   "NEW_FOLLOWER",
   "NEW_MESSAGE",
+  "POST_REPOST",
+  "OPPORTUNITY_SUBSCRIPTION",
 ];
 
 // Tempo máximo para agrupar notificações (24 horas)

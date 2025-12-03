@@ -11,6 +11,7 @@ interface MessageInputProps {
   conversationId: number;
   senderId: number;
   onSendMessage: (message: string, type?: string) => void;
+  onSendFile?: (fileUrl: string, type: string) => void;
 }
 
 interface FilePreview {
@@ -23,6 +24,7 @@ export const MessageInput = ({
   conversationId,
   senderId,
   onSendMessage,
+  onSendFile,
 }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -141,7 +143,6 @@ export const MessageInput = ({
       return newFiles;
     });
   };
-
   const handleSendAudio = async (audioBlob: Blob) => {
     try {
       const audioFile = new File([audioBlob], `audio-${Date.now()}.webm`, {
@@ -155,8 +156,14 @@ export const MessageInput = ({
         fileType: "audio",
       });
 
-      if (result.success && result.data) {
-        onSendMessage(result.data.fileUrl, "FILE");
+      if (result.success && result.data?.fileUrl) {
+        // Envia a mensagem com a URL do arquivo via WebSocket
+        if (onSendFile) {
+          onSendFile(result.data.fileUrl, "FILE");
+        } else {
+          onSendMessage(result.data.fileUrl, "FILE");
+        }
+        toast.success("Áudio enviado com sucesso");
       }
     } catch (error) {
       console.error("Erro ao enviar áudio:", error);
@@ -172,16 +179,21 @@ export const MessageInput = ({
             conversationId,
             senderId,
             file: filePreview.file,
+            fileType: filePreview.type === "image" ? "image" : "file",
           });
 
-          if (result.success && result.data) {
-            onSendMessage(
-              result.data.fileUrl,
-              filePreview.type === "image" ? "IMAGE" : "FILE",
-            );
+          if (result.success && result.data?.fileUrl) {
+            // Envia a mensagem com a URL do arquivo via WebSocket
+            const messageType = filePreview.type === "image" ? "IMAGE" : "FILE";
+            if (onSendFile) {
+              onSendFile(result.data.fileUrl, messageType);
+            } else {
+              onSendMessage(result.data.fileUrl, messageType);
+            }
           }
         } catch (error) {
-          console.error("Erro ao enviar arquivo:", error);
+          console.error("❌ Erro ao enviar arquivo:", error);
+          toast.error(`Erro ao enviar ${filePreview.file.name}`);
         }
       }
 
@@ -189,6 +201,7 @@ export const MessageInput = ({
         if (fp.preview) URL.revokeObjectURL(fp.preview);
       });
       setSelectedFiles([]);
+      toast.success("Arquivos enviados com sucesso");
     }
 
     if (message.trim()) {

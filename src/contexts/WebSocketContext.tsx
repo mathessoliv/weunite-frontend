@@ -221,10 +221,20 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                   };
                 }
 
-                console.log("✅ Adicionando mensagem ao cache");
+                // ✅ Remove mensagens otimísticas do mesmo usuário e tipo antes de adicionar a real
+                const dataWithoutOptimistic = (oldData.data || []).filter(
+                  (msg: any) =>
+                    !msg.isOptimistic ||
+                    msg.senderId !== payload.senderId ||
+                    msg.type !== payload.type,
+                );
+
+                console.log(
+                  "✅ Adicionando mensagem real e removendo otimísticas",
+                );
                 return {
                   ...oldData,
-                  data: [...(oldData.data || []), payload],
+                  data: [...dataWithoutOptimistic, payload],
                 };
               },
             );
@@ -379,9 +389,13 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const subscribeToNotifications = useCallback(
     (userId: number) => {
       if (!clientRef.current?.connected) {
-        console.warn("⚠️ WebSocket não conectado para notificações");
+        console.warn(
+          "⚠️ WebSocket não conectado para notificações. Aguardando conexão...",
+        );
         return;
       }
+
+      console.log("✅ Inscrevendo em /topic/user/" + userId + "/notifications");
 
       const subscription = clientRef.current.subscribe(
         `/topic/user/${userId}/notifications`,
@@ -391,13 +405,25 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
               notificationFrame.body,
             );
 
-            // Atualiza a lista de notificações no cache
+            console.log("🔔 Nova notificação via WebSocket:", notification);
+
+            // Atualiza a lista de notificações no cache de forma otimista
             queryClient.setQueryData(
               notificationKeys.list(userId),
               (oldData: any) => {
                 if (!oldData?.success) return oldData;
 
                 const existingNotifications = oldData.data || [];
+
+                // Verifica se a notificação já existe para evitar duplicação
+                const exists = existingNotifications.some(
+                  (n: Notification) => n.id === notification.id,
+                );
+
+                if (exists) {
+                  console.log("⚠️ Notificação já existe no cache, ignorando");
+                  return oldData;
+                }
 
                 // Adiciona nova notificação no início da lista
                 return {
@@ -407,15 +433,24 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
               },
             );
 
-            // Força o refetch da lista de notificações
-            queryClient.invalidateQueries({
-              queryKey: notificationKeys.list(userId),
-            });
+            // Atualiza o contador de não lidas incrementalmente
+            queryClient.setQueryData(
+              notificationKeys.unreadCount(userId),
+              (oldData: any) => {
+                if (!oldData?.success) return oldData;
 
-            // Invalida o contador de não lidas
-            queryClient.invalidateQueries({
-              queryKey: notificationKeys.unreadCount(userId),
-            });
+                const currentCount = oldData.data?.unreadCount || 0;
+
+                return {
+                  ...oldData,
+                  data: {
+                    unreadCount: currentCount + 1,
+                  },
+                };
+              },
+            );
+
+            console.log("✅ Cache atualizado com nova notificação");
           } catch (error) {
             console.error("Erro ao processar notificação:", error);
           }

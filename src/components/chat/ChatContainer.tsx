@@ -214,6 +214,30 @@ export const ChatContainer = ({
 
     triggerHapticFeedback("light");
 
+    // Optimistic update - adiciona mensagem imediatamente na UI
+    queryClient.setQueryData(
+      chatKeys.messagesByConversation(activeConversation.id, Number(userId)),
+      (oldData: any) => {
+        if (!oldData?.success || !oldData?.data) return oldData;
+
+        const optimisticMessage = {
+          id: `temp-${Date.now()}-${Math.random()}`, // ID temporário único
+          conversationId: activeConversation.id,
+          senderId: Number(userId),
+          content: text,
+          type: type,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          isOptimistic: true, // Flag para identificar mensagem otimista
+        };
+
+        return {
+          ...oldData,
+          data: [...oldData.data, optimisticMessage],
+        };
+      },
+    );
+
     sendMessage({
       conversationId: activeConversation.id,
       senderId: Number(userId),

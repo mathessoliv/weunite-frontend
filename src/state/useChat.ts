@@ -137,17 +137,11 @@ export const useUploadMessageFile = () => {
       conversationId: number;
       senderId: number;
       file: File;
-      fileType?: "audio" | "file";
+      fileType?: "audio" | "file" | "image";
     }) => uploadMessageFileRequest(conversationId, senderId, file),
-    onSuccess: (result, { conversationId, senderId, fileType }) => {
+    onSuccess: (result, { conversationId, senderId }) => {
       if (result.success) {
-        const successMessage =
-          fileType === "audio"
-            ? "Áudio enviado com sucesso!"
-            : result.message || "Arquivo enviado com sucesso!";
-
-        toast.success(successMessage);
-
+        // Apenas refetch para garantir sincronização
         queryClient.invalidateQueries({
           queryKey: chatKeys.messagesByConversation(conversationId, senderId),
         });

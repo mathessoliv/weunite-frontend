@@ -193,7 +193,7 @@ export const Message = ({
           </div>
 
           <div
-            className={`absolute top-1 ${isSender ? "left-[-32px]" : "right-[-32px]"} opacity-0 group-hover/message:opacity-100 transition-opacity`}
+            className={`absolute top-1 ${isSender ? "left-[-32px]" : "right-[-32px]"} md:opacity-0 md:group-hover/message:opacity-100 transition-opacity`}
           >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

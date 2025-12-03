@@ -4,7 +4,9 @@ export type NotificationType =
   | "COMMENT_LIKE"
   | "COMMENT_REPLY"
   | "NEW_FOLLOWER"
-  | "NEW_MESSAGE";
+  | "NEW_MESSAGE"
+  | "POST_REPOST"
+  | "OPPORTUNITY_SUBSCRIPTION";
 
 export interface Notification {
   id: number;

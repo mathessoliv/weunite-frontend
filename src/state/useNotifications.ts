@@ -24,9 +24,9 @@ export const useGetNotifications = (userId: number) => {
   return useQuery({
     queryKey: notificationKeys.list(userId),
     queryFn: () => getNotificationsRequest({ userId }),
-    staleTime: 5 * 60 * 1000, // 5 minutos - confiar no WebSocket
+    staleTime: 0, // ✅ Sempre considera stale para refetch imediato no invalidateQueries
     gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false, // ❌ Desliga refetch ao focar
+    refetchOnWindowFocus: false, // ❌ Desliga refetch ao focar (WebSocket cuida disso)
     refetchOnMount: "always", // ✅ Sempre busca ao montar
     retry: 2,
     enabled: !!userId,
@@ -37,9 +37,9 @@ export const useGetUnreadCount = (userId: number) => {
   return useQuery({
     queryKey: notificationKeys.unreadCount(userId),
     queryFn: () => getUnreadCountRequest(userId),
-    staleTime: 5 * 60 * 1000, // 5 minutos - confiar no WebSocket
+    staleTime: 0, // ✅ Sempre considera stale para refetch imediato no invalidateQueries
     gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false, // ❌ Desliga refetch ao focar
+    refetchOnWindowFocus: false, // ❌ Desliga refetch ao focar (WebSocket cuida disso)
     refetchOnMount: "always", // ✅ Sempre busca ao montar
     retry: 2,
     enabled: !!userId,
