@@ -361,11 +361,6 @@ export function LeftSidebar() {
                       <User className="h-4 w-4 text-gray-500" />
                       <p>Perfil</p>
                     </DropdownMenuItem>
-
-                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
-                      <Settings className="h-4 w-4 text-gray-500" />
-                      <p>Configurações</p>
-                    </DropdownMenuItem>
                   </div>
 
                   {isAdmin && (

@@ -117,7 +117,7 @@ export function MyOpportunities() {
   if (!opportunities || opportunities.length === 0) {
     return (
       <div className="flex justify-center w-full pt-4">
-        <div className="max-w-[45em] w-full px-4 py-8 pb-[5em]">
+        <div className="max-w-3xl w-full px-4 py-8 pb-[5em]">
           <div className="mb-8">
             <h1 className="text-3xl font-bold">
               {isCompany ? "Minhas Oportunidades" : "Minhas Candidaturas"}
@@ -128,20 +128,20 @@ export function MyOpportunities() {
                 : "Acompanhe as oportunidades em que você se candidatou"}
             </p>
           </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="w-full">
-              <CardContent className="flex flex-col items-center justify-center py-16">
+          <div className="w-full">
+            <Card className="w-full min-h-[60vh] flex flex-col items-center justify-center text-center border-2 border-dashed">
+              <CardContent className="flex flex-col items-center justify-center p-12">
                 {isCompany ? (
-                  <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
+                  <Briefcase className="h-32 w-32 text-muted-foreground/30 mb-8" />
                 ) : (
-                  <UserCheck className="h-16 w-16 text-muted-foreground mb-4" />
+                  <UserCheck className="h-32 w-32 text-muted-foreground/30 mb-8" />
                 )}
-                <p className="text-lg font-medium text-muted-foreground mb-2">
+                <h3 className="text-2xl font-semibold text-foreground mb-4">
                   {isCompany
                     ? "Você ainda não criou nenhuma oportunidade"
                     : "Você ainda não se candidatou a nenhuma oportunidade"}
-                </p>
-                <p className="text-sm text-muted-foreground text-center max-w-md">
+                </h3>
+                <p className="text-lg text-muted-foreground max-w-xl mx-auto">
                   {isCompany
                     ? "Crie sua primeira oportunidade para começar a receber inscrições de atletas interessados"
                     : "Explore as oportunidades disponíveis e candidate-se às que mais combinam com você"}

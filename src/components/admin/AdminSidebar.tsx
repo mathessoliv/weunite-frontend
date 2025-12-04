@@ -44,11 +44,6 @@ const adminMenuItems = [
     href: "/admin/reports",
     icon: AlertTriangle,
   },
-  {
-    title: "Configurações",
-    href: "/admin/settings",
-    icon: Settings,
-  },
 ];
 
 /**

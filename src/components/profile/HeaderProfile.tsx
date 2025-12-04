@@ -15,6 +15,12 @@ import { useGetFollowers, useGetFollowing } from "@/state/useFollow";
 import { getInitials } from "@/utils/getInitials";
 import { useTheme } from "../ThemeProvider";
 import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
+import { useNavigate } from "react-router-dom";
+import {
+  useCreateConversation,
+  useGetUserConversations,
+} from "@/state/useChat";
+import { useChatStore } from "@/stores/useChatStore";
 
 interface HeaderProfileProps {
   profileUsername?: string;
@@ -47,6 +53,51 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
     handleFollow,
     isLoading: isFollowLoading,
   } = useFollowAction(profileUsername);
+
+  const navigate = useNavigate();
+  const { mutateAsync: createConversation, isPending: isCreatingConversation } =
+    useCreateConversation();
+  const setPendingConversationId = useChatStore(
+    (state) => state.setPendingConversationId,
+  );
+  const setIsConversationOpen = useChatStore(
+    (state) => state.setIsConversationOpen,
+  );
+  const { data: conversationsData } = useGetUserConversations(Number(user?.id));
+
+  const handleChat = async () => {
+    if (!user?.id || !displayUser?.id) return;
+
+    const targetUserId = Number(displayUser.id);
+
+    // Check if conversation exists
+    const existingConversation = conversationsData?.data?.find(
+      (conv) =>
+        conv.participantIds.includes(targetUserId) &&
+        conv.participantIds.length === 2,
+    );
+
+    if (existingConversation) {
+      setPendingConversationId(existingConversation.id);
+      setIsConversationOpen(true);
+      navigate("/chat");
+    } else {
+      try {
+        const result = await createConversation({
+          initiatorUserId: Number(user.id),
+          participantIds: [Number(user.id), targetUserId],
+        });
+
+        if (result.success && result.data) {
+          setPendingConversationId(result.data.id);
+          setIsConversationOpen(true);
+          navigate("/chat");
+        }
+      } catch (error) {
+        console.error("Erro ao criar conversa:", error);
+      }
+    }
+  };
 
   const renderFollowButton = () => (
     <Button
@@ -182,16 +233,14 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
               </div>
 
               <div className="ml-auto mr-4 mt-2 gap-3 flex">
-                {isOwnProfile ? (
-                  <Button variant="outline" className="flex items-center gap-2">
-                    Configurações
-                  </Button>
-                ) : (
+                {!isOwnProfile && (
                   <div className="flex gap-3">
                     {renderFollowButton()}
                     <Button
                       variant="outline"
                       className="flex items-center gap-2"
+                      onClick={handleChat}
+                      disabled={isCreatingConversation}
                     >
                       <Send className="h-4 w-4" />
                       Conversar
@@ -326,14 +375,15 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
             </div>
 
             <div className="ml-auto mr-4 mt-2 gap-3 flex">
-              {isOwnProfile ? (
-                <Button variant="outline" className="flex items-center gap-2">
-                  Configurações
-                </Button>
-              ) : (
+              {!isOwnProfile && (
                 <div className="flex gap-3">
                   {renderFollowButton()}
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={handleChat}
+                    disabled={isCreatingConversation}
+                  >
                     <Send className="h-4 w-4" />
                     Conversar
                   </Button>
