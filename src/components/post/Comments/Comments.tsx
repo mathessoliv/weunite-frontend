@@ -38,8 +38,8 @@ export default function Comments({
 
   const { commentDesktop } = useBreakpoints();
 
-  const { data } = useGetComments(Number(post.id));
-  const comments = data?.data;
+  const { data, isLoading, error } = useGetComments(Number(post.id));
+  const comments = data?.data || [];
 
   const { mutate: createCommentMutation } = useCreateComment();
 
@@ -124,9 +124,23 @@ export default function Comments({
             </div>
 
             <div className="w-full max-w-[45em] p-2">
-              {comments?.map((comment: CommentType) => (
-                <Comment key={comment.id} comment={comment} />
-              ))}
+              {isLoading ? (
+                <p className="text-center text-muted-foreground py-4">
+                  Carregando comentários...
+                </p>
+              ) : error ? (
+                <p className="text-center text-red-500 py-4">
+                  Erro ao carregar comentários
+                </p>
+              ) : comments.length > 0 ? (
+                comments.map((comment: CommentType) => (
+                  <Comment key={comment.id} comment={comment} />
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  Nenhum comentário ainda
+                </p>
+              )}
             </div>
           </div>
         </DrawerContent>
@@ -175,9 +189,23 @@ export default function Comments({
               className="flex-1 max-h-[66vh] overflow-y-auto -mt-5 p-4 custom-scrollbar"
             >
               <div className="space-y-4">
-                {comments?.map((comment: CommentType) => (
-                  <Comment key={comment.id} comment={comment} />
-                ))}
+                {isLoading ? (
+                  <p className="text-center text-muted-foreground py-4">
+                    Carregando comentários...
+                  </p>
+                ) : error ? (
+                  <p className="text-center text-red-500 py-4">
+                    Erro ao carregar comentários
+                  </p>
+                ) : comments.length > 0 ? (
+                  comments.map((comment: CommentType) => (
+                    <Comment key={comment.id} comment={comment} />
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    Nenhum comentário ainda
+                  </p>
+                )}
               </div>
             </div>
 

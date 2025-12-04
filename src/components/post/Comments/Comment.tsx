@@ -17,9 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Heart,
-  Repeat2,
-  MessageCircle,
-  Bookmark,
   EllipsisVertical,
   Trash2,
   Share,
@@ -48,11 +45,13 @@ import { getInitials } from "@/utils/getInitials";
 import { useToggleLikeComment, useCommentLikes } from "@/state/useLikes";
 import { useEffect } from "react";
 import { ReportModal } from "@/components/shared/ReportModal";
+import { useNavigate } from "react-router-dom";
 
 const actions = [{ icon: Heart }];
 
 export default function Comment({ comment }: { comment: Comment }) {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const initials = getInitials(comment.user.name);
 
   const [isEditCommentOpen, setIsEditCommentOpen] = useState(false);
@@ -99,7 +98,7 @@ export default function Comment({ comment }: { comment: Comment }) {
   };
 
   const handleDelete = () => {
-    if (!user?.id) return;
+    if (!user?.id || !comment.post?.id) return;
 
     deleteComment.mutate({
       userId: Number(user.id),
@@ -108,6 +107,19 @@ export default function Comment({ comment }: { comment: Comment }) {
     });
 
     setIsDeleteDialogOpen(false);
+  };
+
+  const handleCommentClick = () => {
+    if (comment.post?.id) {
+      navigate(`/post/${comment.post.id}`, {
+        state: { highlightCommentId: comment.id },
+      });
+    }
+  };
+
+  const handleUsernameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/profile/${comment.user.username}`);
   };
 
   return (
@@ -130,13 +142,19 @@ export default function Comment({ comment }: { comment: Comment }) {
       <div id={`comment-${comment.id}`} className="w-full">
         <Card className="w-full max-w-[42em] mx-auto bg-red shadow-none border-0 border-b rounded-none border-foreground/30">
           <CardHeader className="flex flex-row items-center gap-2 mb-[0.5em]">
-            <Avatar className="hover:cursor-pointer h-[2.8em] w-[2.8em]">
+            <Avatar
+              className="hover:cursor-pointer h-[2.8em] w-[2.8em]"
+              onClick={handleUsernameClick}
+            >
               <AvatarImage src={comment.user.profileImg} alt="profile image" />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
 
             <div className="flex flex-col">
-              <CardTitle className="text-base font-medium hover:cursor-pointer">
+              <CardTitle
+                className="text-base font-medium hover:cursor-pointer"
+                onClick={handleUsernameClick}
+              >
                 {comment.user.username}
               </CardTitle>
 
@@ -227,7 +245,10 @@ export default function Comment({ comment }: { comment: Comment }) {
             </DropdownMenu>
           </CardHeader>
 
-          <CardContent className="mt-[-18px]">
+          <CardContent
+            className="mt-[-18px] hover:cursor-pointer"
+            onClick={handleCommentClick}
+          >
             <p className="">{comment.text}</p>
           </CardContent>
 

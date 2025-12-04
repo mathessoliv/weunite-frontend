@@ -25,11 +25,19 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const isCompanyProfile = displayUser?.role === "COMPANY";
 
   const { data } = useGetPosts();
-
-  const { data: dataComments } = useGetCommentsByUserId(
-    displayUser?.id ? Number(displayUser.id) : 0,
-  );
   const [activeTab, setActiveTab] = useState("publicacoes");
+
+  // Garantir que temos um userId válido
+  const userId = displayUser?.id ? Number(displayUser.id) : 0;
+
+  console.log("👤 User Info:", { displayUser, userId, isValid: userId > 0 });
+
+  const {
+    data: dataComments,
+    isLoading: isLoadingComments,
+    error: commentsError,
+  } = useGetCommentsByUserId(userId);
+
   const posts = data?.data || [];
   const comments = dataComments?.data || [];
 
@@ -40,10 +48,19 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
       }
       return post.user?.id === displayUser?.id;
     }) || [];
-  const userComments =
-    comments.filter(
-      (comment: CommentType) => comment.user?.id === displayUser?.id,
-    ) || [];
+
+  // A API já retorna apenas comentários do usuário, não precisa filtrar novamente
+  const userComments = comments || [];
+
+  console.log("🔍 FeedProfile Debug:", {
+    userId,
+    displayUser,
+    dataComments,
+    comments,
+    userComments,
+    isLoadingComments,
+    commentsError,
+  });
 
   return (
     <div className="max-w-2xl xl:w-[48em] mx-auto">
@@ -101,12 +118,16 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
 
       {activeTab === "comentarios" && (
         <div className="flex flex-col items-center justify-center">
-          {userComments.length > 0 ? (
+          {isLoadingComments ? (
+            <p className="text-gray-500 mt-8">Carregando comentários...</p>
+          ) : commentsError ? (
+            <p className="text-red-500 mt-8">Erro ao carregar comentários</p>
+          ) : userComments.length > 0 ? (
             userComments.map((comment: CommentType) => (
               <Comment key={comment.id} comment={comment} />
             ))
           ) : (
-            <p className="text-gray-500 mt-8">Nenhuma publicação encontrada</p>
+            <p className="text-gray-500 mt-8">Nenhum comentário encontrado</p>
           )}
         </div>
       )}

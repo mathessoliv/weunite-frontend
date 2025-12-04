@@ -100,7 +100,8 @@ export const useGetComments = (postId: number) => {
     queryKey: commentKeys.listByPost(postId),
     queryFn: () => getCommentsPostRequest(postId),
     staleTime: 5 * 60 * 1000,
-    enabled: !!postId,
+    enabled: !!postId && postId > 0,
+    retry: 1,
   });
 };
 export const useGetCommentsByUserId = (userId: number) => {
@@ -108,7 +109,8 @@ export const useGetCommentsByUserId = (userId: number) => {
     queryKey: commentKeys.listByUser(userId),
     queryFn: () => getCommentsUserId(userId),
     staleTime: 5 * 60 * 1000,
-    enabled: !!userId,
+    enabled: !!userId && userId > 0,
+    retry: 1,
   });
 };
 
