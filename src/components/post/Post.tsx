@@ -25,6 +25,8 @@ import {
   Share,
   Edit,
   Flag,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import {
@@ -89,6 +91,10 @@ export default function Post({ post }: { post: Post }) {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const MAX_LENGTH = 200;
 
   const handleLikeClick = () => {
     if (!user?.id) return;
@@ -336,7 +342,29 @@ export default function Post({ post }: { post: Post }) {
                 ) : null}
               </div>
 
-              <p className="">{post.text}</p>
+              <div className="relative">
+                <p className="whitespace-pre-wrap break-words">
+                  {post.text.length > MAX_LENGTH && !isExpanded
+                    ? post.text.substring(0, MAX_LENGTH) + "..."
+                    : post.text}
+                </p>
+                {post.text.length > MAX_LENGTH && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="flex items-center gap-1 text-sm font-medium text-primary hover:underline mt-2 transition-colors"
+                  >
+                    {isExpanded ? (
+                      <>
+                        Ver menos <ChevronUp className="h-4 w-4" />
+                      </>
+                    ) : (
+                      <>
+                        Ler mais <ChevronDown className="h-4 w-4" />
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </CardContent>
 
             <CardFooter className="flex flex-col mt-[-20px]">
