@@ -1,0 +1,545 @@
+import type { AxiosError } from "axios";
+import type {
+  ReportedPost,
+  ReportedOpportunity,
+  ReportedComment,
+  ReportSummary,
+} from "@/@types/admin.types";
+import type { ApiResponse } from "@/types/api.types";
+import { instance as axios } from "@/api/axios";
+
+/**
+ * Serviço de Reports - Gerenciamento de Denúncias
+ *
+ * Responsável por:
+ * - Buscar posts e oportunidades denunciadas
+ * - Gerenciar status de denúncias (dismiss, review, resolve)
+ * - Deletar conteúdo denunciado
+ */
+
+// ========== Posts Denunciados ==========
+
+/**
+ * Busca resumo dos posts denunciados (apenas IDs e contagem)
+ */
+export const getReportedPostsSummaryRequest = async (): Promise<
+  ApiResponse<ReportSummary[]>
+> => {
+  try {
+    const response = await axios.get("/admin/posts/reported");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Posts denunciados carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message || "Erro ao carregar posts denunciados",
+    };
+  }
+};
+
+/**
+ * Busca detalhes completos dos posts denunciados
+ */
+export const getReportedPostsDetailsRequest = async (): Promise<
+  ApiResponse<ReportedPost[]>
+> => {
+  try {
+    const response = await axios.get("/admin/posts/reported/details");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes dos posts denunciados carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar detalhes dos posts denunciados",
+    };
+  }
+};
+
+/**
+ * Busca detalhes de um post denunciado específico
+ */
+export const getReportedPostDetailRequest = async (
+  postId: number,
+): Promise<ApiResponse<ReportedPost>> => {
+  try {
+    const response = await axios.get(`/admin/posts/reported/${postId}`);
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes do post carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message || "Erro ao carregar detalhes do post",
+    };
+  }
+};
+
+/**
+ * Deleta um post denunciado
+ */
+export const deletePostByAdminRequest = async (
+  postId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.delete(`/admin/posts/${postId}`);
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Post deletado com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao deletar post",
+    };
+  }
+};
+
+/**
+ * Restaura um post deletado
+ */
+export const restorePostByAdminRequest = async (
+  postId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.put(`/admin/posts/${postId}/restore`);
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Post restaurado com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao restaurar post",
+    };
+  }
+};
+
+// ========== Oportunidades Denunciadas ==========
+
+/**
+ * Busca resumo das oportunidades denunciadas (apenas IDs e contagem)
+ */
+export const getReportedOpportunitiesSummaryRequest = async (): Promise<
+  ApiResponse<ReportSummary[]>
+> => {
+  try {
+    const response = await axios.get("/admin/opportunities/reported");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Oportunidades denunciadas carregadas com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar oportunidades denunciadas",
+    };
+  }
+};
+
+/**
+ * Busca detalhes completos das oportunidades denunciadas
+ */
+export const getReportedOpportunitiesDetailsRequest = async (): Promise<
+  ApiResponse<ReportedOpportunity[]>
+> => {
+  try {
+    const response = await axios.get("/admin/opportunities/reported/details");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes das oportunidades denunciadas carregadas com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar detalhes das oportunidades denunciadas",
+    };
+  }
+};
+
+/**
+ * Busca detalhes de uma oportunidade denunciada específica
+ */
+export const getReportedOpportunityDetailRequest = async (
+  opportunityId: number,
+): Promise<ApiResponse<ReportedOpportunity>> => {
+  try {
+    const response = await axios.get(
+      `/admin/opportunities/reported/${opportunityId}`,
+    );
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes da oportunidade carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar detalhes da oportunidade",
+    };
+  }
+};
+
+/**
+ * Deleta uma oportunidade denunciada
+ */
+export const deleteOpportunityByAdminRequest = async (
+  opportunityId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.delete(
+      `/admin/opportunities/${opportunityId}`,
+    );
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Oportunidade deletada com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao deletar oportunidade",
+    };
+  }
+};
+
+/**
+ * Restaura uma oportunidade deletada
+ */
+export const restoreOpportunityByAdminRequest = async (
+  opportunityId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.put(
+      `/admin/opportunities/${opportunityId}/restore`,
+    );
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Oportunidade restaurada com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao restaurar oportunidade",
+    };
+  }
+};
+
+// ========== Comentários Denunciados ==========
+
+/**
+ * Busca resumo dos comentários denunciados (apenas IDs e contagem)
+ */
+export const getReportedCommentsSummaryRequest = async (): Promise<
+  ApiResponse<ReportSummary[]>
+> => {
+  try {
+    const response = await axios.get("/admin/comments/reported");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Comentários denunciados carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar comentários denunciados",
+    };
+  }
+};
+
+/**
+ * Busca detalhes completos dos comentários denunciados
+ */
+export const getReportedCommentsDetailsRequest = async (): Promise<
+  ApiResponse<ReportedComment[]>
+> => {
+  try {
+    const response = await axios.get("/admin/comments/reported/details");
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes dos comentários denunciados carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar detalhes dos comentários denunciados",
+    };
+  }
+};
+
+/**
+ * Busca detalhes de um comentário denunciado específico
+ */
+export const getReportedCommentDetailRequest = async (
+  commentId: number,
+): Promise<ApiResponse<ReportedComment>> => {
+  try {
+    const response = await axios.get(`/admin/comments/reported/${commentId}`);
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Detalhes do comentário carregados com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar detalhes do comentário",
+    };
+  }
+};
+
+/**
+ * Deleta um comentário denunciado
+ */
+export const deleteCommentByAdminRequest = async (
+  commentId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.delete(`/admin/comments/${commentId}`);
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Comentário deletado com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao deletar comentário",
+    };
+  }
+};
+
+/**
+ * Restaura um comentário deletado
+ */
+export const restoreCommentByAdminRequest = async (
+  commentId: number,
+): Promise<ApiResponse<void>> => {
+  try {
+    const response = await axios.put(`/admin/comments/${commentId}/restore`);
+
+    return {
+      success: true,
+      data: null,
+      message: response.data.message || "Comentário restaurado com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao restaurar comentário",
+    };
+  }
+};
+
+// ========== Gerenciamento de Status de Denúncias ==========
+
+/**
+ * Descarta denúncias de uma entidade (post ou oportunidade)
+ */
+export const dismissReportsRequest = async (
+  entityId: number,
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
+): Promise<ApiResponse<string>> => {
+  try {
+    const response = await axios.put(
+      `/admin/reports/dismiss/${entityId}/${type}`,
+    );
+
+    return {
+      success: true,
+      data: response.data.data || response.data.message,
+      message: response.data.message || "Denúncias descartadas com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao descartar denúncias",
+    };
+  }
+};
+
+/**
+ * Marca denúncias como revisadas (em análise)
+ */
+export const markReportsAsReviewedRequest = async (
+  entityId: number,
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
+): Promise<ApiResponse<string>> => {
+  try {
+    const response = await axios.put(
+      `/admin/reports/review/${entityId}/${type}`,
+    );
+
+    return {
+      success: true,
+      data: response.data.data || response.data.message,
+      message: response.data.message || "Denúncias marcadas como revisadas",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao marcar denúncias como revisadas",
+    };
+  }
+};
+
+/**
+ * Resolve denúncias (mantém o conteúdo e marca como resolvido)
+ */
+export const resolveReportsRequest = async (
+  entityId: number,
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
+): Promise<ApiResponse<string>> => {
+  try {
+    const response = await axios.put(
+      `/admin/reports/resolve/${entityId}/${type}`,
+    );
+
+    return {
+      success: true,
+      data: response.data.data || response.data.message,
+      message: response.data.message || "Denúncias resolvidas com sucesso",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao resolver denúncias",
+    };
+  }
+};

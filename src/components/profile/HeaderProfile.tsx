@@ -13,12 +13,22 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useFollowAction } from "@/hooks/useFollowAction";
 import { useGetFollowers, useGetFollowing } from "@/state/useFollow";
 import { getInitials } from "@/utils/getInitials";
+import { useTheme } from "../ThemeProvider";
+import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
+import { useNavigate } from "react-router-dom";
+import {
+  useCreateConversation,
+  useGetUserConversations,
+} from "@/state/useChat";
+import { useChatStore } from "@/stores/useChatStore";
 
 interface HeaderProfileProps {
   profileUsername?: string;
 }
 
 export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
+  const { theme } = useTheme();
+
   const { user } = useAuthStore();
   const { data: profileUser } = useUserProfile(profileUsername);
 
@@ -44,6 +54,51 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
     isLoading: isFollowLoading,
   } = useFollowAction(profileUsername);
 
+  const navigate = useNavigate();
+  const { mutateAsync: createConversation, isPending: isCreatingConversation } =
+    useCreateConversation();
+  const setPendingConversationId = useChatStore(
+    (state) => state.setPendingConversationId,
+  );
+  const setIsConversationOpen = useChatStore(
+    (state) => state.setIsConversationOpen,
+  );
+  const { data: conversationsData } = useGetUserConversations(Number(user?.id));
+
+  const handleChat = async () => {
+    if (!user?.id || !displayUser?.id) return;
+
+    const targetUserId = Number(displayUser.id);
+
+    // Check if conversation exists
+    const existingConversation = conversationsData?.data?.find(
+      (conv) =>
+        conv.participantIds.includes(targetUserId) &&
+        conv.participantIds.length === 2,
+    );
+
+    if (existingConversation) {
+      setPendingConversationId(existingConversation.id);
+      setIsConversationOpen(true);
+      navigate("/chat");
+    } else {
+      try {
+        const result = await createConversation({
+          initiatorUserId: Number(user.id),
+          participantIds: [Number(user.id), targetUserId],
+        });
+
+        if (result.success && result.data) {
+          setPendingConversationId(result.data.id);
+          setIsConversationOpen(true);
+          navigate("/chat");
+        }
+      } catch (error) {
+        console.error("Erro ao criar conversa:", error);
+      }
+    }
+  };
+
   const renderFollowButton = () => (
     <Button
       variant="outline"
@@ -61,6 +116,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   const [isFollowingOpen, setIsFollowingOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isEditBannerOpen, setIsEditBannerOpen] = useState(false);
+  const [showUsernameTooltip, setShowUsernameTooltip] = useState(false);
 
   const handleEditProfileOpen = () => {
     setIsEditProfileOpen(true);
@@ -77,7 +133,21 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
     setIsEditBannerOpen(true);
   };
 
+  const getDefaultBanner = () => {
+    if (isOwnProfile) {
+      return theme === "light" ? "/BannerWhite.png" : "/BannerBlack.png";
+    }
+    return theme === "light" ? "/BannerBlackP.png" : "/BannerWhiteP.png";
+  };
   const { isDesktop } = useBreakpoints();
+
+  const truncatedUsername =
+    !isDesktop &&
+    !isOwnProfile &&
+    displayUser?.username &&
+    displayUser.username.length > 7
+      ? displayUser.username.substring(0, 7) + "..."
+      : displayUser?.username;
 
   if (isDesktop) {
     return (
@@ -111,7 +181,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
           <div className="h-40 relative group ">
             <img
               className="w-full h-full object-cover rounded-b-sm"
-              src={displayUser?.bannerImg || "/BannerDefaultWhite.png"}
+              src={displayUser?.bannerImg || getDefaultBanner()}
             />
             {isOwnProfile && (
               <>
@@ -152,23 +222,25 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
               </div>
 
               <div className="flex flex-col ml-[0.5em]">
-                <p className="text-primary font-medium text-2xl">
-                  {displayUser?.username}
-                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-primary font-medium text-2xl">
+                      {truncatedUsername}
+                    </p>
+                  </TooltipTrigger>
+                </Tooltip>
                 <p className="text-[#a1a1a1] text-xs">{displayUser?.name}</p>
               </div>
 
               <div className="ml-auto mr-4 mt-2 gap-3 flex">
-                {isOwnProfile ? (
-                  <Button variant="outline" className="flex items-center gap-2">
-                    Configurações
-                  </Button>
-                ) : (
+                {!isOwnProfile && (
                   <div className="flex gap-3">
                     {renderFollowButton()}
                     <Button
                       variant="outline"
                       className="flex items-center gap-2"
+                      onClick={handleChat}
+                      disabled={isCreatingConversation}
                     >
                       <Send className="h-4 w-4" />
                       Conversar
@@ -232,7 +304,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
         <div className="h-35 relative group">
           <img
             className="h-full w-full object-cover"
-            src={displayUser?.bannerImg || "/BannerDefaultWhite.png"}
+            src={displayUser?.bannerImg || getDefaultBanner()}
             alt="Banner do perfil"
           />
           {isOwnProfile && (
@@ -275,19 +347,43 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
             </div>
 
             <div className="flex flex-col ml-[0.5em]">
-              <p className="text-primary text-base">{displayUser?.username}</p>
+              <Tooltip
+                open={showUsernameTooltip}
+                onOpenChange={setShowUsernameTooltip}
+              >
+                <TooltipTrigger asChild>
+                  <p
+                    className="text-primary text-base cursor-pointer"
+                    onClick={() => setShowUsernameTooltip(!showUsernameTooltip)}
+                  >
+                    {truncatedUsername}
+                  </p>
+                </TooltipTrigger>
+                {!isDesktop &&
+                  !isOwnProfile &&
+                  displayUser?.username &&
+                  displayUser.username.length > 7 && (
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-background/80 text-primary text-xs border border-primary/20"
+                    >
+                      {displayUser.username}
+                    </TooltipContent>
+                  )}
+              </Tooltip>
               <p className="text-[#a1a1a1] text-xs">{displayUser?.name}</p>
             </div>
 
             <div className="ml-auto mr-4 mt-2 gap-3 flex">
-              {isOwnProfile ? (
-                <Button variant="outline" className="flex items-center gap-2">
-                  Configurações
-                </Button>
-              ) : (
+              {!isOwnProfile && (
                 <div className="flex gap-3">
                   {renderFollowButton()}
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={handleChat}
+                    disabled={isCreatingConversation}
+                  >
                     <Send className="h-4 w-4" />
                     Conversar
                   </Button>

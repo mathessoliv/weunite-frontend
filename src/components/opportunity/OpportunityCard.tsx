@@ -41,14 +41,22 @@ import {
 
 import { getTimeAgo } from "@/hooks/useGetTimeAgo";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getInitials } from "@/utils/getInitials";
 import { useNavigate } from "react-router-dom";
 import { OpportunityDescription } from "./DescriptionOpportunity";
 import { EditOpportunity } from "./EditOpportunity";
 import type { Opportunity } from "@/@types/opportunity.types";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useDeleteOpportunity } from "@/state/useOpportunities";
+import {
+  useDeleteOpportunity,
+  useToggleSubscriber,
+  useCheckIsSubscribed,
+  useToggleSavedOpportunity,
+  useCheckIsSaved,
+} from "@/state/useOpportunities";
+import { ReportModal } from "@/components/shared/ReportModal";
+import { toast } from "sonner";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -59,11 +67,51 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const deleteOpportunity = useDeleteOpportunity();
+  const toggleSubscriber = useToggleSubscriber();
 
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const isOwner = opportunity.company?.id === user?.id;
+  const isAthlete = user?.role === "ATHLETE";
+
+  // Verificar se está inscrito (somente para atletas que não são donos)
+  const { data: isSubscribedData } = useCheckIsSubscribed(
+    Number(user?.id),
+    Number(opportunity.id),
+    isAthlete && !isOwner,
+  );
+  const isSubscribed = isSubscribedData?.data || false;
+
+  // Verificar se está salva (somente para atletas)
+  const { data: isSavedData } = useCheckIsSaved(
+    Number(user?.id),
+    Number(opportunity.id),
+    isAthlete,
+  );
+  const isSaved = isSavedData?.data || false;
+
+  // Debug: Log do status de salvamento
+  useEffect(() => {
+    if (isAthlete && user?.id) {
+      console.log(`📌 Opportunity ${opportunity.id} - isSaved status:`, {
+        isSavedData,
+        isSaved,
+        opportunityTitle: opportunity.title,
+      });
+    }
+  }, [
+    isSavedData,
+    isSaved,
+    isAthlete,
+    user?.id,
+    opportunity.id,
+    opportunity.title,
+  ]);
+
+  const toggleSavedOpportunity = useToggleSavedOpportunity();
+
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditOpportunityOpen, setIsEditOpportunityOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const timeAgo = getTimeAgo(opportunity.createdAt);
 
@@ -75,8 +123,6 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
       year: "numeric",
     },
   );
-
-  const isOwner = opportunity.company?.id === user?.id;
 
   const handleCompanyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -108,11 +154,50 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
   const handleApply = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (!user?.id || !isAthlete || toggleSubscriber.isPending) return;
+
+    toggleSubscriber.mutate({
+      athleteId: Number(user.id),
+      opportunityId: Number(opportunity.id),
+    });
   };
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsBookmarked(!isBookmarked);
+
+    if (!user?.id || !isAthlete || toggleSavedOpportunity.isPending) return;
+
+    console.log("🔖 Toggling saved opportunity:", {
+      athleteId: Number(user.id),
+      opportunityId: Number(opportunity.id),
+      currentStatus: isSaved,
+    });
+
+    toggleSavedOpportunity.mutate(
+      {
+        athleteId: Number(user.id),
+        opportunityId: Number(opportunity.id),
+      },
+      {
+        onSuccess: (response) => {
+          console.log("✅ Toggle success response:", response);
+
+          // A resposta vem com a estrutura: { success, data, isSaved, message }
+          if (response.success && response.isSaved) {
+            toast.success(
+              response.message || "Oportunidade salva com sucesso!",
+            );
+          } else if (response.success && !response.isSaved) {
+            toast.info(response.message || "Oportunidade removida dos salvos");
+          }
+        },
+        onError: (error) => {
+          console.error("❌ Toggle error:", error);
+          toast.error("Erro ao salvar/remover oportunidade");
+        },
+      },
+    );
   };
 
   const handleDropdownClick = (e: React.MouseEvent) => {
@@ -159,6 +244,21 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                 <DropdownMenuContent align="end" className="w-48">
                   {isOwner ? (
                     <>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(
+                            `/opportunity/${opportunity.id}/subscribers`,
+                          );
+                        }}
+                        className="hover:cursor-pointer"
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Ver Candidatos ({opportunity.subscribersCount || 0})
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
                       <DropdownMenuItem
                         onClick={handleEditOpportunityOpen}
                         className="hover:cursor-pointer"
@@ -226,7 +326,13 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                         Compartilhar
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600 hover:cursor-pointer">
+                      <DropdownMenuItem
+                        className="text-red-600 hover:cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsReportModalOpen(true);
+                        }}
+                      >
                         <Flag className="mr-2 h-4 w-4" />
                         Denunciar
                       </DropdownMenuItem>
@@ -261,7 +367,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                <span>{opportunity.subscribers?.length || 0} candidatos</span>
+                <span>{opportunity.subscribersCount || 0} candidatos</span>
               </div>
             </div>
           </div>
@@ -270,14 +376,34 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
         <CardFooter className="flex flex-col mt-[-15px]">
           <div className="flex w-full justify-between items-center">
             <CardAction className="flex items-center gap-3">
-              {!isOwner && (
+              {!isOwner && isAthlete && (
                 <Button
                   size="sm"
                   variant="default"
                   className="bg-third hover:bg-third/90 text-white rounded-full px-4"
                   onClick={handleApply}
+                  disabled={toggleSubscriber.isPending}
                 >
-                  Candidatar-se
+                  {toggleSubscriber.isPending
+                    ? "Processando..."
+                    : isSubscribed
+                      ? "Cancelar candidatura"
+                      : "Candidatar-se"}
+                </Button>
+              )}
+
+              {isOwner && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full px-4 border-third text-third hover:bg-third hover:text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/opportunity/${opportunity.id}/subscribers`);
+                  }}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Ver candidaturas ({opportunity.subscribersCount || 0})
                 </Button>
               )}
             </CardAction>
@@ -286,7 +412,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
               <div onClick={handleBookmark} className="hover:cursor-pointer">
                 <Bookmark
                   className={`h-5 w-5 transition-colors ${
-                    isBookmarked
+                    isSaved
                       ? "text-third fill-third"
                       : "text-muted-foreground hover:text-third"
                   }`}
@@ -307,6 +433,14 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
         open={isEditOpportunityOpen}
         onOpenChange={setIsEditOpportunityOpen}
         opportunity={opportunity}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onOpenChange={setIsReportModalOpen}
+        entityType="OPPORTUNITY"
+        entityId={Number(opportunity.id)}
+        entityTitle={opportunity.title}
       />
     </>
   );

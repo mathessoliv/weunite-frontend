@@ -22,7 +22,6 @@ import {
   Eye,
   Loader2,
 } from "lucide-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { Checkbox } from "../ui/checkbox";
 import { usePasswordStrength } from "@/hooks/usePasswordStrength";
 import { useState } from "react";
@@ -30,6 +29,8 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import { useAuthMessages } from "@/hooks/useAuthMessages";
 import { signUpSchema } from "@/schemas/auth/signUp.schema";
+import { SafeLottie } from "../shared/SafeLottie";
+import { TermsModal } from "../shared/TermsModal";
 
 export function SignUp({
   setCurrentTab,
@@ -47,6 +48,7 @@ export function SignUp({
     },
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const { signup, loading } = useAuthStore();
   const password = form.watch("password");
   const progress = usePasswordStrength(password);
@@ -61,13 +63,12 @@ export function SignUp({
 
   useAuthMessages();
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col space-y-1">
       <div className="flex justify-center">
-        <DotLottieReact
+        <SafeLottie
           src="https://lottie.host/a06a613a-efd2-4dbd-96d0-2f4fd7344792/0jYYhWcj4H.lottie"
-          loop
-          autoplay
-          className="w-50 m-0"
+          width={130}
+          height={130}
         />
       </div>
 
@@ -195,9 +196,12 @@ export function SignUp({
                       className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       Aceitar{" "}
-                      <a href="" className="underline decoration-solid">
+                      <span
+                        className="underline decoration-solid text-primary hover:text-primary/80 cursor-pointer"
+                        onClick={() => setIsTermsModalOpen(true)}
+                      >
                         termos e condições
-                      </a>
+                      </span>
                     </label>
                   </div>
 
@@ -220,6 +224,11 @@ export function SignUp({
           </div>
         </CardContent>
       </Card>
+
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onOpenChange={setIsTermsModalOpen}
+      />
     </div>
   );
 }

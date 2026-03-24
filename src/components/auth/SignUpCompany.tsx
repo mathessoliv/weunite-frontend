@@ -22,13 +22,14 @@ import {
   EyeOff,
   Eye,
 } from "lucide-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { Checkbox } from "../ui/checkbox";
 import { signUpCompanySchema } from "@/schemas/auth/signUp.schema";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthMessages } from "@/hooks/useAuthMessages";
 import { useState } from "react";
+import { SafeLottie } from "../shared/SafeLottie";
+import { TermsModal } from "../shared/TermsModal";
 
 const formatCNPJ = (value: string) => {
   const numbers = value.replace(/\D/g, "");
@@ -66,6 +67,7 @@ export function SignUpCompany({
 
   const { signup, loading } = useAuthStore();
   const navigate = useNavigate();
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   async function onSubmit(values: z.infer<typeof signUpCompanySchema>) {
     const result = await signup(values);
@@ -79,13 +81,12 @@ export function SignUpCompany({
   useAuthMessages();
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col">
       <div className="flex justify-center">
-        <DotLottieReact
+        <SafeLottie
           src="https://lottie.host/a06a613a-efd2-4dbd-96d0-2f4fd7344792/0jYYhWcj4H.lottie"
-          loop
-          autoplay
-          className="w-50 m-0"
+          width={110}
+          height={110}
         />
       </div>
 
@@ -97,10 +98,10 @@ export function SignUpCompany({
               Preencha os dados abaixo para começar
             </p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-1">
             <Form {...form}>
               <form
-                className="space-y-3"
+                className="space-y-4"
                 onSubmit={form.handleSubmit(onSubmit)}
               >
                 <FormField
@@ -209,7 +210,7 @@ export function SignUpCompany({
                           <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
                             type="text"
-                            placeholder="XX.XXX.XXX/0000-XX"
+                            placeholder="00.000.000/0001-00"
                             className="pl-8"
                             value={formatCNPJ(field.value)}
                             onChange={(e) => {
@@ -218,14 +219,14 @@ export function SignUpCompany({
                                 extractCNPJNumbers(formattedValue);
                               field.onChange(numbersOnly);
                             }}
+                            onBlur={field.onBlur}
                             maxLength={18}
                           />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Digite apenas números, a formatação será aplicada
-                            automaticamente.
-                          </p>
                         </div>
                       </FormControl>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Digite o CNPJ da sua empresa (14 dígitos)
+                      </p>
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )}
@@ -233,15 +234,17 @@ export function SignUpCompany({
 
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="terms" required />
                     <label
                       htmlFor="terms"
                       className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       Aceitar{" "}
-                      <a href="" className="underline decoration-solid">
+                      <span
+                        className="underline decoration-solid text-primary hover:text-primary/80 cursor-pointer"
+                        onClick={() => setIsTermsModalOpen(true)}
+                      >
                         termos e condições
-                      </a>
+                      </span>
                     </label>
                   </div>
 
@@ -268,6 +271,11 @@ export function SignUpCompany({
           </div>
         </CardContent>
       </Card>
+
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onOpenChange={setIsTermsModalOpen}
+      />
     </div>
   );
 }

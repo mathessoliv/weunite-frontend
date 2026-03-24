@@ -34,6 +34,12 @@ export const ChatLayout = () => {
   const setIsConversationOpen = useChatStore(
     (state) => state.setIsConversationOpen,
   );
+  const pendingConversationId = useChatStore(
+    (state) => state.pendingConversationId,
+  );
+  const setPendingConversationId = useChatStore(
+    (state) => state.setPendingConversationId,
+  );
 
   const { data: conversationsData } = useGetUserConversations(
     Number(userId) || 0,
@@ -164,9 +170,33 @@ export const ChatLayout = () => {
 
   useEffect(() => {
     if (!activeConversationId && conversationsWithUsers.length > 0) {
-      setActiveConversationId(conversationsWithUsers[0].id);
+      // Se há uma conversa pendente (vinda de notificação), usa ela
+      if (pendingConversationId) {
+        const conversationExists = conversationsWithUsers.some(
+          (conv) => conv.id === pendingConversationId,
+        );
+        if (conversationExists) {
+          setActiveConversationId(pendingConversationId);
+          if (maxLeftSideBar) {
+            setShowConversations(false);
+            setIsConversationOpen(true);
+          }
+        }
+        // Limpa o ID pendente após uso
+        setPendingConversationId(null);
+      } else {
+        // Caso padrão: seleciona a primeira conversa
+        setActiveConversationId(conversationsWithUsers[0].id);
+      }
     }
-  }, [activeConversationId, conversationsWithUsers]);
+  }, [
+    activeConversationId,
+    conversationsWithUsers,
+    pendingConversationId,
+    setPendingConversationId,
+    maxLeftSideBar,
+    setIsConversationOpen,
+  ]);
 
   // Limpa o estado quando não estiver mais no mobile ou ao desmontar o componente
   useEffect(() => {

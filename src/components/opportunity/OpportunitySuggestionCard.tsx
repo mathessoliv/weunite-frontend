@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import type { Opportunity } from "@/@types/opportunity.types";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -10,12 +9,10 @@ import { OpportunityDescription } from "./DescriptionOpportunity";
 
 interface CardSuggestionOpportunityProps {
   opportunity: Opportunity;
-  isMobile?: boolean;
 }
 
 export default function CardSuggestionOpportunity({
   opportunity,
-  isMobile = false,
 }: CardSuggestionOpportunityProps) {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
 
@@ -92,7 +89,7 @@ export default function CardSuggestionOpportunity({
             </div>
             <div className="flex items-center gap-1 flex-1 justify-end">
               <Users className="h-3.5 w-3.5 flex-shrink-0" />
-              <span>{opportunity.subscribers?.length || 0}</span>
+              <span>{opportunity.subscribersCount || 0}</span>
             </div>
           </div>
         </CardContent>

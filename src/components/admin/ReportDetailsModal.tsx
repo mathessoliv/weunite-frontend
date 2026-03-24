@@ -7,16 +7,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { CheckCircle, XCircle, AlertTriangle, User } from "lucide-react";
+import {
+  XCircle,
+  AlertTriangle,
+  User,
+  ShieldAlert,
+  ShieldBan,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
 import type { Report } from "@/@types/admin.types";
 import { toast } from "sonner";
 import {
   markReportsAsReviewedRequest,
-  resolveReportsRequest,
   dismissReportsRequest,
+  banUserRequest,
+  suspendUserRequest,
+  deletePostByAdminRequest,
+  deleteOpportunityByAdminRequest,
+  deleteCommentByAdminRequest,
+  restorePostByAdminRequest,
+  restoreOpportunityByAdminRequest,
+  restoreCommentByAdminRequest,
 } from "@/api/services/adminService";
 import { useState } from "react";
+import { getReportReasonText } from "@/utils/adminBadges";
+import { SuspendUserDialog } from "./SuspendUserDialog";
+import { BanUserConfirmDialog } from "./BanUserConfirmDialog";
 
 interface ReportDetailsModalProps {
   isOpen: boolean;
@@ -35,39 +52,70 @@ export function ReportDetailsModal({
   onActionComplete,
 }: ReportDetailsModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false);
+  const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
 
   if (!report) return null;
 
-  const getReasonText = (reason: string) => {
-    const reasonMap: Record<string, string> = {
-      spam: "Spam",
-      harassment: "Assédio",
-      inappropriate_content: "Conteúdo Inadequado",
-      fake_profile: "Perfil Falso",
-      fake_opportunity: "Oportunidade Falsa",
-      copyright_violation: "Violação de Direitos",
-      other: "Outros",
-    };
-    return reasonMap[reason] || reason;
-  };
+  // TODO: Pegar o admin ID do contexto de autenticação
+  const adminId = 1; // Temporário - substituir por ID real do admin logado
 
-  const handleResolve = async () => {
+  const handleSuspendUser = async (durationInDays: number, reason: string) => {
+    const reportedUserWithId = report.reportedUser as any;
+    const userId = reportedUserWithId.id;
+
+    if (!userId) {
+      toast.error("Não foi possível identificar o ID do usuário denunciado");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Usar o entityId do report (ID do post/opportunity)
-    const entityId = report.entityId;
-    const type = report.entityType;
-
-    const response = await resolveReportsRequest(entityId, type);
+    const response = await suspendUserRequest({
+      userId: Number(userId),
+      adminId,
+      durationInDays,
+      reason,
+      reportId: parseInt(report.id),
+    });
 
     setIsLoading(false);
 
     if (response.success) {
-      toast.success(response.message || "Denúncia resolvida com sucesso!");
+      toast.success(response.message || "Usuário suspenso com sucesso!");
       onOpenChange(false);
       onActionComplete?.();
     } else {
-      toast.error(response.error || "Erro ao resolver denúncia");
+      toast.error(response.error || "Erro ao suspender usuário");
+    }
+  };
+
+  const handleBanUser = async (reason: string) => {
+    const reportedUserWithId = report.reportedUser as any;
+    const userId = reportedUserWithId.id;
+
+    if (!userId) {
+      toast.error("Não foi possível identificar o ID do usuário denunciado");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const response = await banUserRequest({
+      userId: Number(userId),
+      adminId,
+      reason,
+      reportId: parseInt(report.id),
+    });
+
+    setIsLoading(false);
+
+    if (response.success) {
+      toast.success(response.message || "Usuário banido com sucesso!");
+      onOpenChange(false);
+      onActionComplete?.();
+    } else {
+      toast.error(response.error || "Erro ao banir usuário");
     }
   };
 
@@ -109,103 +157,220 @@ export function ReportDetailsModal({
     }
   };
 
+  const handleDeleteContent = async () => {
+    const entityName =
+      report.entityType === "POST"
+        ? "post"
+        : report.entityType === "COMMENT"
+          ? "comentário"
+          : "oportunidade";
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja deletar este ${entityName}? Esta ação não pode ser desfeita.`,
+    );
+
+    if (!confirmed) return;
+
+    setIsLoading(true);
+
+    let response;
+    if (report.entityType === "POST") {
+      response = await deletePostByAdminRequest(report.entityId);
+    } else if (report.entityType === "COMMENT") {
+      response = await deleteCommentByAdminRequest(report.entityId);
+    } else {
+      response = await deleteOpportunityByAdminRequest(report.entityId);
+    }
+
+    setIsLoading(false);
+
+    if (response.success) {
+      toast.success(
+        response.message ||
+          `${entityName.charAt(0).toUpperCase() + entityName.slice(1)} deletado com sucesso!`,
+      );
+      onOpenChange(false);
+      // Aguardar o modal fechar antes de recarregar
+      setTimeout(() => {
+        onActionComplete?.();
+      }, 100);
+    } else {
+      toast.error(response.error || "Erro ao deletar conteúdo");
+    }
+  };
+
+  const handleRestoreContent = async () => {
+    const entityName =
+      report.entityType === "POST"
+        ? "post"
+        : report.entityType === "COMMENT"
+          ? "comentário"
+          : "oportunidade";
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja restaurar este ${entityName}?`,
+    );
+
+    if (!confirmed) return;
+
+    setIsLoading(true);
+
+    let response;
+    if (report.entityType === "POST") {
+      response = await restorePostByAdminRequest(report.entityId);
+    } else if (report.entityType === "COMMENT") {
+      response = await restoreCommentByAdminRequest(report.entityId);
+    } else {
+      response = await restoreOpportunityByAdminRequest(report.entityId);
+    }
+
+    setIsLoading(false);
+
+    if (response.success) {
+      toast.success(
+        response.message ||
+          `${entityName.charAt(0).toUpperCase() + entityName.slice(1)} restaurado com sucesso!`,
+      );
+      onOpenChange(false);
+      // Aguardar o modal fechar antes de recarregar
+      setTimeout(() => {
+        onActionComplete?.();
+      }, 100);
+    } else {
+      toast.error(response.error || "Erro ao restaurar conteúdo");
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="text-xl">Detalhes da Denúncia</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Revise as informações e tome as ações necessárias
-          </p>
+      <DialogContent className="max-w-[95vw] lg:max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="pb-4 border-b shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-bold">
+                Detalhes da Denúncia
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Revise as informações e escolha a ação apropriada
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">
+                {new Date(report.createdAt).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground">ID: #{report.id}</p>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Informações da Denúncia */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Denunciante */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Denunciante
-              </h4>
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${report.reportedBy.username}`}
-                  />
-                  <AvatarFallback>
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{report.reportedBy.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    @{report.reportedBy.username}
-                  </p>
+        {/* Layout em 3 Colunas */}
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_300px] gap-6 py-6 overflow-y-auto flex-1">
+          {/* COLUNA 1: Perfis */}
+          <div className="space-y-4">
+            {/* Denunciado */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldAlert className="h-4 w-4 text-red-400" />
+                <h4 className="text-sm font-bold  dark:text-red-400 uppercase tracking-wide">
+                  Denunciado
+                </h4>
+              </div>
+              <div className="rounded-lg border-2 bg-red-500/60 p-4">
+                <div className="flex items-start gap-3 ">
+                  <Avatar className="h-14 w-14 ring-2 shrink-0 bg-red-500/60">
+                    <AvatarImage src={report.reportedUser.profileImg} />
+                    <AvatarFallback className="bg-red-500/60 text-white">
+                      <User className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-base truncate">
+                      {report.reportedUser.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      @{report.reportedUser.username}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Denunciado */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Denunciado
+            {/* Denunciante */}
+            <div>
+              <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">
+                Denunciante
               </h4>
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${report.reportedUser.username}`}
-                  />
-                  <AvatarFallback>
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{report.reportedUser.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    @{report.reportedUser.username}
-                  </p>
+              <div className="rounded-lg border-2 border-border bg-card p-4">
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-border shrink-0">
+                    <AvatarImage src={report.reportedBy.profileImg} />
+                    <AvatarFallback>
+                      <User className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-base truncate">
+                      {report.reportedBy.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      @{report.reportedBy.username}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <Separator />
-
-          {/* Motivo e Descrição */}
-          <div className="space-y-4">
+          {/* COLUNA 2: Conteúdo */}
+          <div className="space-y-4 min-w-0 lg:border-x lg:px-6">
+            {/* Motivo */}
             <div>
-              <h4 className="text-sm font-medium mb-2">Motivo</h4>
-              <Badge variant="outline" className="text-sm">
-                {getReasonText(report.reason)}
+              <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">
+                Motivo da Denúncia
+              </h4>
+              <Badge variant="destructive" className="text-sm px-3 py-1.5">
+                {getReportReasonText(report.reason)}
               </Badge>
             </div>
 
+            {/* Descrição */}
             <div>
-              <h4 className="text-sm font-medium mb-2">Descrição</h4>
-              <div className="rounded-lg border border-border bg-muted/30 p-4">
-                <p className="text-sm">{report.description}</p>
+              <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">
+                Descrição da Denúncia
+              </h4>
+              <div className="rounded-lg border-2 border-border bg-muted/40 p-4">
+                <p className="text-sm leading-relaxed">{report.description}</p>
               </div>
             </div>
 
+            {/* Conteúdo Denunciado */}
             <div>
-              <h4 className="text-sm font-medium mb-2">Conteúdo Reportado</h4>
-              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+              <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">
+                Conteúdo Denunciado
+              </h4>
+              <div className="rounded-lg border-2 bg-muted/40 p-4 space-y-4">
                 {report.content && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {report.content}
                   </p>
                 )}
                 {report.imageUrl && (
-                  <div className="rounded-lg overflow-hidden border border-border">
+                  <div className="rounded-lg overflow-hidden border-2 border-border shadow-md">
                     <img
                       src={report.imageUrl}
-                      alt="Conteúdo do post"
-                      className="w-full h-auto object-cover max-h-96"
+                      alt="Conteúdo denunciado"
+                      className="w-full h-auto object-contain max-h-[450px]"
                     />
                   </div>
                 )}
                 {!report.content && !report.imageUrl && (
-                  <p className="text-sm text-muted-foreground italic">
+                  <p className="text-sm text-muted-foreground italic text-center py-8">
                     Nenhum conteúdo disponível
                   </p>
                 )}
@@ -213,61 +378,140 @@ export function ReportDetailsModal({
             </div>
           </div>
 
-          <Separator />
-
-          {/* Informações Adicionais */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Data:</span>
-              <span className="ml-2 font-medium">
-                {new Date(report.createdAt).toLocaleDateString("pt-BR")}
-              </span>
+          {/* COLUNA 3: Ações */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldBan className="h-5 w-5 text-orange-600" />
+              <h4 className="text-sm font-bold uppercase tracking-wide">
+                Ações
+              </h4>
             </div>
-            <div>
-              <span className="text-muted-foreground">ID:</span>
-              <span className="ml-2 font-mono text-xs">#{report.id}</span>
+
+            {/* Marcar como em análise */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 dark:hover:bg-blue-950/40 transition-all"
+              onClick={handleAnalyze}
+              disabled={isLoading}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              {isLoading ? "Processando..." : "Em Análise"}
+            </Button>
+
+            {/* Rejeitar denúncia */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-green-50 hover:text-green-700 hover:border-green-400 dark:hover:bg-green-950/40 transition-all"
+              onClick={handleReject}
+              disabled={isLoading}
+            >
+              <XCircle className="h-4 w-4" />
+              {isLoading ? "Processando..." : "Rejeitar Denúncia (Falsa)"}
+            </Button>
+
+            <div className="my-3 border-t-2 border-dashed pt-3">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase">
+                  Com Punição
+                </p>
+              </div>
             </div>
-          </div>
 
-          <Separator />
+            {/* Suspender usuário */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-yellow-50 hover:text-yellow-700 hover:border-yellow-400 dark:hover:bg-yellow-950/40 transition-all"
+              onClick={() => setIsSuspendDialogOpen(true)}
+              disabled={isLoading}
+            >
+              <ShieldAlert className="h-4 w-4" />
+              {isLoading ? "Processando..." : "Suspender"}
+            </Button>
 
-          {/* Ações */}
-          <div>
-            <h4 className="text-sm font-medium mb-3">Ações de Moderação</h4>
-            <div className="space-y-2">
-              {report.status === "pending" && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/20"
-                  onClick={handleAnalyze}
-                  disabled={isLoading}
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  {isLoading ? "Processando..." : "Marcar como Em Análise"}
-                </Button>
-              )}
+            {/* Banir usuário */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-red-50 hover:text-red-700 hover:border-red-400 dark:hover:bg-red-950/40 transition-all"
+              onClick={() => setIsBanDialogOpen(true)}
+              disabled={isLoading}
+            >
+              <ShieldBan className="h-4 w-4" />
+              {isLoading ? "Processando..." : "Banir"}
+            </Button>
+
+            {/* Deletar conteúdo */}
+            {report.status !== "deleted" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 hover:bg-green-50 hover:text-green-600 hover:border-green-200 dark:hover:bg-green-950/20"
-                onClick={handleResolve}
+                size="sm"
+                className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-red-50 hover:text-red-700 hover:border-red-400 dark:hover:bg-red-950/40 transition-all"
+                onClick={handleDeleteContent}
                 disabled={isLoading}
               >
-                <CheckCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Resolver Denúncia"}
+                <Trash2 className="h-4 w-4" />
+                {isLoading
+                  ? "Processando..."
+                  : `Deletar ${
+                      report.entityType === "POST"
+                        ? "Post"
+                        : report.entityType === "COMMENT"
+                          ? "Comentário"
+                          : "Oportunidade"
+                    }`}
               </Button>
+            )}
+
+            {/* Restaurar conteúdo */}
+            {report.status === "deleted" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/20"
-                onClick={handleReject}
+                size="sm"
+                className="w-full justify-start gap-2 h-11 text-sm font-semibold hover:bg-green-50 hover:text-green-700 hover:border-green-400 dark:hover:bg-green-950/40 transition-all"
+                onClick={handleRestoreContent}
                 disabled={isLoading}
               >
-                <XCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Rejeitar Denúncia"}
+                <RotateCcw className="h-4 w-4" />
+                {isLoading
+                  ? "Processando..."
+                  : `Restaurar ${
+                      report.entityType === "POST"
+                        ? "Post"
+                        : report.entityType === "COMMENT"
+                          ? "Comentário"
+                          : "Oportunidade"
+                    }`}
               </Button>
+            )}
+
+            <div className="mt-6 pt-4 border-t">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <strong>💡 Lembrete:</strong> Ações de suspensão e banimento são
+                irreversíveis. Analise cuidadosamente.
+              </p>
             </div>
           </div>
         </div>
       </DialogContent>
+
+      {/* Dialogs de confirmação */}
+      <SuspendUserDialog
+        isOpen={isSuspendDialogOpen}
+        onOpenChange={setIsSuspendDialogOpen}
+        onConfirm={handleSuspendUser}
+        username={report.reportedUser.username}
+      />
+
+      <BanUserConfirmDialog
+        isOpen={isBanDialogOpen}
+        onOpenChange={setIsBanDialogOpen}
+        onConfirm={handleBanUser}
+        username={report.reportedUser.username}
+      />
     </Dialog>
   );
 }

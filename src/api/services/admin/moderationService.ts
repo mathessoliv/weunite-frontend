@@ -1,13 +1,18 @@
 import { instance as axios } from "@/api/axios";
 import type { AxiosError } from "axios";
 import type { ModerationAction, ReportedPost } from "@/@types/admin.types";
+import type { ApiResponse } from "@/types/api.types";
 
-interface ApiResponse<T> {
-  success: boolean;
-  data: T | null;
-  message: string | null;
-  error: string | null;
-}
+/**
+ * Serviço de Moderação - Posts Denunciados
+ *
+ * Este arquivo contém funções específicas para moderação de posts:
+ * - Ocultar posts
+ * - Deletar posts
+ * - Rejeitar denúncias de posts
+ *
+ * Nota: Para operações em denúncias (reports) gerais, use adminService.ts
+ */
 
 /**
  * Busca todos os posts denunciados

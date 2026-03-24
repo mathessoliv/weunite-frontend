@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useGetCommentsByUserId } from "@/state/useComments";
 import AboutProfile from "./AboutProfile";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import CompanyOpportunities from "./CompanyOpportunities";
 
 interface FeedProfileProps {
   profileUsername?: string;
@@ -20,21 +21,46 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const isOwnProfile = !profileUsername || profileUsername === user?.username;
   const displayUser = isOwnProfile ? user : profileUser;
 
-  const { data } = useGetPosts();
+  // Verifica se o perfil é de uma empresa
+  const isCompanyProfile = displayUser?.role === "COMPANY";
 
-  const { data: dataComments } = useGetCommentsByUserId(
-    displayUser?.id ? Number(displayUser.id) : 0,
-  );
+  const { data } = useGetPosts();
   const [activeTab, setActiveTab] = useState("publicacoes");
+
+  // Garantir que temos um userId válido
+  const userId = displayUser?.id ? Number(displayUser.id) : 0;
+
+  console.log("👤 User Info:", { displayUser, userId, isValid: userId > 0 });
+
+  const {
+    data: dataComments,
+    isLoading: isLoadingComments,
+    error: commentsError,
+  } = useGetCommentsByUserId(userId);
+
   const posts = data?.data || [];
   const comments = dataComments?.data || [];
 
   const userPosts =
-    posts.filter((post: PostType) => post.user?.id === displayUser?.id) || [];
-  const userComments =
-    comments.filter(
-      (comment: CommentType) => comment.user?.id === displayUser?.id,
-    ) || [];
+    posts.filter((post: PostType) => {
+      if (post.repostedBy) {
+        return post.repostedBy.id === displayUser?.id;
+      }
+      return post.user?.id === displayUser?.id;
+    }) || [];
+
+  // A API já retorna apenas comentários do usuário, não precisa filtrar novamente
+  const userComments = comments || [];
+
+  console.log("🔍 FeedProfile Debug:", {
+    userId,
+    displayUser,
+    dataComments,
+    comments,
+    userComments,
+    isLoadingComments,
+    commentsError,
+  });
 
   return (
     <div className="max-w-2xl xl:w-[48em] mx-auto">
@@ -56,6 +82,17 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
         >
           <p className="">Comentários</p>
         </div>
+
+        {isCompanyProfile && (
+          <div
+            className={`w-full justify-center flex cursor-pointer py-2 ${
+              activeTab === "oportunidades" ? "border-b-2 border-primary" : ""
+            }`}
+            onClick={() => setActiveTab("oportunidades")}
+          >
+            <p className="">Oportunidades</p>
+          </div>
+        )}
 
         <div
           className={`w-full justify-center flex cursor-pointer py-2 ${
@@ -81,7 +118,11 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
 
       {activeTab === "comentarios" && (
         <div className="flex flex-col items-center justify-center">
-          {userComments.length > 0 ? (
+          {isLoadingComments ? (
+            <p className="text-gray-500 mt-8">Carregando comentários...</p>
+          ) : commentsError ? (
+            <p className="text-red-500 mt-8">Erro ao carregar comentários</p>
+          ) : userComments.length > 0 ? (
             userComments.map((comment: CommentType) => (
               <Comment key={comment.id} comment={comment} />
             ))
@@ -91,9 +132,13 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
         </div>
       )}
 
+      {activeTab === "oportunidades" && isCompanyProfile && displayUser?.id && (
+        <CompanyOpportunities companyId={Number(displayUser.id)} />
+      )}
+
       {activeTab === "Sobre" && (
-        <div className="flex flex-col items-center justify-center mt-3">
-          <AboutProfile />
+        <div className="flex flex-col items-center justify-center mt-3 mb-[2em]">
+          <AboutProfile user={displayUser} />
         </div>
       )}
     </div>

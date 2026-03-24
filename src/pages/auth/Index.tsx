@@ -9,7 +9,7 @@ export function Index() {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname.split("/").pop() || "login";
-  
+
   const setCurrentTab = (tab: string) => {
     navigate(`/auth/${tab}`);
   };
@@ -21,7 +21,7 @@ export function Index() {
   }, [path, navigate]);
 
   return (
-    <div className="flex items-center justify-center h-screen">
+    <div className="flex items-center justify-center h-screen w-full overflow-hidden">
       <Tabs value={path} onValueChange={setCurrentTab}>
         <TabsContent value="signup">
           <SignUp setCurrentTab={setCurrentTab} />
@@ -37,4 +37,3 @@ export function Index() {
     </div>
   );
 }
-

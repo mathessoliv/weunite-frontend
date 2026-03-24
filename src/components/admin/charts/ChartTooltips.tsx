@@ -21,6 +21,29 @@ export function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 /**
+ * Tooltip customizado para gráfico de oportunidades por skill
+ * Exibe apenas o nome da skill e quantas oportunidades a usam
+ */
+export function CategoryTooltip({ active, payload }: TooltipProps) {
+  if (active && payload && payload.length) {
+    const data = payload[0]?.payload;
+
+    if (!data) return null;
+
+    return (
+      <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg max-w-xs">
+        <p className="font-medium text-foreground mb-1">{data.category}</p>
+        <p className="text-sm text-muted-foreground">
+          <span className="font-semibold text-primary">{data.count}</span>{" "}
+          oportunidades
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
+/**
  * Tooltip específico para gráfico de pizza
  * Mostra percentuais e formatação específica
  */

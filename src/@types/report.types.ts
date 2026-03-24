@@ -5,15 +5,12 @@
 import type { User } from "./user.types";
 import type { Post } from "./post.types";
 import type { Opportunity } from "./opportunity.types";
+import type { Comment } from "./comment.types";
 
 /**
  * Status possíveis de uma denúncia
  */
-export type ReportStatus =
-  | "pending"
-  | "under_review"
-  | "resolved"
-  | "dismissed";
+export type ReportStatus = "pending" | "under_review" | "resolved";
 
 /**
  * Motivos de denúncia disponíveis
@@ -33,6 +30,16 @@ export type ReportReason =
 export type ReportEntityType = "post" | "user" | "opportunity" | "comment";
 
 /**
+ * Ação tomada em uma denúncia
+ */
+export type ActionTaken =
+  | "none"
+  | "content_removed"
+  | "user_warned"
+  | "user_suspended"
+  | "user_banned";
+
+/**
  * Interface base para uma denúncia
  */
 export interface Report {
@@ -44,12 +51,16 @@ export interface Report {
     username: string;
   };
   reportedUser: {
+    id?: string;
     name: string;
     username: string;
   };
   reason: ReportReason;
   description: string;
   status: ReportStatus;
+  actionTaken?: ActionTaken;
+  resolvedByAdminId?: number;
+  resolvedAt?: string;
   createdAt: string;
   content: string;
   imageUrl?: string;
@@ -77,7 +88,7 @@ export interface ReportedPost {
   post: Post;
   reports: PostReport[];
   totalReports: number;
-  status: "pending" | "hidden" | "deleted";
+  status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
 /**
@@ -127,7 +138,32 @@ export interface ReportedOpportunity {
   opportunity: Opportunity;
   reports: OpportunityReport[];
   totalReports: number;
-  status: "active" | "hidden" | "deleted";
+  status: "active" | "hidden" | "deleted" | "resolved" | "reviewed";
+}
+
+/**
+ * Interface para denúncia de comentário
+ */
+export interface CommentReport {
+  id: string;
+  commentId: string;
+  reporter: User;
+  reason: ReportReason;
+  description: string;
+  status: ReportStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+/**
+ * Interface para comentário denunciado
+ */
+export interface ReportedComment {
+  comment: Comment;
+  reports: CommentReport[];
+  totalReports: number;
+  status: "pending" | "hidden" | "deleted" | "resolved" | "reviewed";
 }
 
 /**

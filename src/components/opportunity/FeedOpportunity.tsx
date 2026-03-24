@@ -5,13 +5,15 @@ import OpportunityCard from "./OpportunityCard";
 import { HorizontalMenuOpportunity } from "./HorizontalMenuOpportunity";
 import OpportunitySearch from "./OpportunitySearch";
 import { CreateOpportunity } from "./CreateOpportunity";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useBreakpoints } from "@/hooks/useBreakpoints";
 import { OpportunitySidebar } from "./OpportunitySidebar";
 import type { Opportunity } from "@/@types/opportunity.types";
 import { Plus } from "lucide-react";
 import OpportunitySuggestionCarousel from "./OpportunitySuggestionCarousel";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useSearchParams } from "react-router-dom";
+import OpportunityDetailModal from "./OpportunityDetailModal";
 
 function OpportunitySkeleton() {
   return (
@@ -59,6 +61,39 @@ export default function FeedOpportunity() {
   const [isCreateOpportunityOpen, setIsCreateOpportunityOpen] = useState(false);
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const { user } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedOpportunity, setSelectedOpportunity] =
+    useState<Opportunity | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Detectar opportunityId na URL e abrir modal automaticamente
+  useEffect(() => {
+    const opportunityId = searchParams.get("opportunityId");
+    if (opportunityId && opportunities) {
+      const opportunity = opportunities.find(
+        (opp: Opportunity) => opp.id === Number(opportunityId),
+      );
+      if (opportunity) {
+        setSelectedOpportunity(opportunity);
+        setIsDetailModalOpen(true);
+        // Remover o parâmetro da URL
+        searchParams.delete("opportunityId");
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, setSearchParams, opportunities]);
+
+  const filteredOpportunities =
+    opportunities?.filter(
+      (opportunity: Opportunity) =>
+        opportunity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        opportunity.description
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        opportunity.company?.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()),
+    ) || [];
 
   if (isLoading) {
     return (
@@ -100,7 +135,7 @@ export default function FeedOpportunity() {
           </div>
         </div>
 
-        {!isDesktop && user?.role === "company" && (
+        {!isDesktop && user?.role === "COMPANY" && (
           <Button
             onClick={() => setIsCreateOpportunityOpen(true)}
             className="fixed bottom-20 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-[60]"
@@ -133,13 +168,27 @@ export default function FeedOpportunity() {
           {opportunities && opportunities.length > 0 && (
             <OpportunitySuggestionCarousel opportunities={opportunities} />
           )}
-          {opportunities.map((opportunity: Opportunity) => (
-            <OpportunityCard key={opportunity.id} opportunity={opportunity} />
-          ))}
+          {filteredOpportunities.length > 0 ? (
+            filteredOpportunities.map((opportunity: Opportunity) => (
+              <OpportunityCard key={opportunity.id} opportunity={opportunity} />
+            ))
+          ) : (
+            <div className="flex justify-center items-center min-h-[40vh] w-full">
+              <div className="text-center space-y-3">
+                <div className="text-4xl mb-4">🔍</div>
+                <p className="text-muted-foreground text-lg font-medium">
+                  Nenhuma oportunidade encontrada
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Tente buscar por outro termo
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {!isDesktop && (
+      {!isDesktop && user?.role === "COMPANY" && (
         <Button
           onClick={() => setIsCreateOpportunityOpen(true)}
           className="fixed bottom-20 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-[10]"
@@ -153,6 +202,15 @@ export default function FeedOpportunity() {
         open={isCreateOpportunityOpen}
         onOpenChange={setIsCreateOpportunityOpen}
       />
+
+      {selectedOpportunity && (
+        <OpportunityDetailModal
+          opportunity={selectedOpportunity}
+          isOpen={isDetailModalOpen}
+          onOpenChange={setIsDetailModalOpen}
+          isMobile={isMobile}
+        />
+      )}
     </>
   );
 }

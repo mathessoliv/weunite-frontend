@@ -10,9 +10,11 @@ import type { ReactNode } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import type { SendMessage } from "@/@types/chat.types";
+import type { Notification } from "@/@types/notification.types";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { chatKeys } from "@/state/useChat";
+import { notificationKeys } from "@/state/useNotifications";
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -26,6 +28,8 @@ interface WebSocketContextType {
     onStatusChange: (status: "ONLINE" | "OFFLINE") => void,
   ) => (() => void) | undefined;
   notifyOnlineStatus: (userId: number, status: "ONLINE" | "OFFLINE") => void;
+  subscribeToNotifications: (userId: number) => (() => void) | undefined;
+  markAsRead: (conversationId: number, userId: number) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -40,7 +44,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   // ✅ Cria a conexão WebSocket UMA ÚNICA VEZ quando o app carrega
   useEffect(() => {
     if (!jwt) {
-      console.log("⚠️ WebSocket: JWT não encontrado");
+      // Silenciosamente retorna se não há JWT (usuário não autenticado)
       return;
     }
 
@@ -70,6 +74,13 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
+      // ✅ Debug para ver TUDO que passa pelo WebSocket
+      debug: (str) => {
+        // Filtra heartbeats para não poluir o console
+        // if (str !== ">>> PING" && str !== "<<< PONG") {
+        //   console.log('🔍 STOMP:', str);
+        // }
+      },
       onConnect: (frame) => {
         console.log("✅ WebSocket: STOMP conectado com sucesso!", frame);
         setIsConnected(true);
@@ -157,31 +168,73 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         `/topic/conversation/${conversationId}`,
         (messageFrame) => {
           try {
-            // Parseia a mensagem recebida
-            const newMessage = JSON.parse(messageFrame.body);
-            console.log("📩 Nova mensagem recebida via WebSocket:", newMessage);
+            const payload = JSON.parse(messageFrame.body);
+            console.log(
+              "📩 WebSocket Payload recebido:",
+              JSON.stringify(payload, null, 2),
+            );
 
-            // Atualiza o cache DIRETAMENTE sem refetch
+            if (payload.type === "DELETE") {
+              const messageId = payload.messageId || payload.id;
+              console.log(`🗑️ Removendo mensagem ${messageId} via WebSocket`);
+              queryClient.setQueryData(
+                chatKeys.messagesByConversation(conversationId, userId),
+                (oldData: any) => {
+                  if (!oldData?.success) return oldData;
+                  return {
+                    ...oldData,
+                    data: oldData.data.filter(
+                      (msg: any) => String(msg.id) !== String(messageId),
+                    ),
+                  };
+                },
+              );
+              return;
+            }
+
+            if (!payload.id) {
+              console.warn("⚠️ Payload sem ID ignorado:", payload);
+              return;
+            }
+
             queryClient.setQueryData(
               chatKeys.messagesByConversation(conversationId, userId),
               (oldData: any) => {
                 if (!oldData?.success) return oldData;
 
-                // Verifica se a mensagem já existe (evita duplicatas)
-                const messageExists = oldData.data?.some(
-                  (msg: any) => msg.id === newMessage.id,
+                const messageIndex = oldData.data?.findIndex(
+                  (msg: any) => String(msg.id) === String(payload.id),
                 );
 
-                if (messageExists) {
-                  console.log("⚠️ Mensagem duplicada ignorada:", newMessage.id);
-                  return oldData;
+                if (messageIndex !== -1) {
+                  console.log("🔄 Atualizando mensagem existente:", payload.id);
+                  const updatedData = [...(oldData.data || [])];
+
+                  updatedData[messageIndex] = {
+                    ...updatedData[messageIndex],
+                    ...payload,
+                  };
+
+                  return {
+                    ...oldData,
+                    data: updatedData,
+                  };
                 }
 
-                console.log("✅ Adicionando mensagem ao cache");
-                // Adiciona nova mensagem ao final
+                // ✅ Remove mensagens otimísticas do mesmo usuário e tipo antes de adicionar a real
+                const dataWithoutOptimistic = (oldData.data || []).filter(
+                  (msg: any) =>
+                    !msg.isOptimistic ||
+                    msg.senderId !== payload.senderId ||
+                    msg.type !== payload.type,
+                );
+
+                console.log(
+                  "✅ Adicionando mensagem real e removendo otimísticas",
+                );
                 return {
                   ...oldData,
-                  data: [...(oldData.data || []), newMessage],
+                  data: [...dataWithoutOptimistic, payload],
                 };
               },
             );
@@ -196,15 +249,68 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         },
       );
 
+      // ✅ NOVA INSCRIÇÃO: Escutar confirmação de leitura
+      const readSubscription = clientRef.current.subscribe(
+        `/topic/conversation/${conversationId}/read`,
+        (messageFrame) => {
+          try {
+            const readerId = Number(messageFrame.body);
+            console.log(
+              `✅ Leitura confirmada na conversa ${conversationId} pelo usuário ${readerId}`,
+            );
+
+            // Atualiza o cache localmente para pintar os checks de azul
+            queryClient.setQueryData(
+              chatKeys.messagesByConversation(conversationId, userId),
+              (oldData: any) => {
+                if (!oldData?.success) return oldData;
+
+                return {
+                  ...oldData,
+                  data: oldData.data.map((msg: any) => {
+                    // Se a mensagem não foi enviada pelo leitor (ou seja, foi enviada por mim), marca como lida
+                    if (msg.senderId !== readerId) {
+                      return { ...msg, isRead: true };
+                    }
+                    return msg;
+                  }),
+                };
+              },
+            );
+          } catch (error) {
+            console.error(
+              "❌ Erro ao processar confirmação de leitura:",
+              error,
+            );
+          }
+        },
+      );
+
       return () => {
         console.log(
           `📴 Desinscrevendo de /topic/conversation/${conversationId}`,
         );
         subscription.unsubscribe();
+        readSubscription.unsubscribe();
       };
     },
     [queryClient],
   );
+
+  const markAsRead = useCallback((conversationId: number, userId: number) => {
+    if (!clientRef.current?.connected) {
+      console.warn(
+        "⚠️ WebSocket não conectado, não foi possível marcar como lido",
+      );
+      return;
+    }
+
+    console.log("📤 Enviando aviso de leitura via WebSocket...");
+    clientRef.current.publish({
+      destination: "/app/chat.markAsRead",
+      body: JSON.stringify({ conversationId, userId }),
+    });
+  }, []);
 
   const sendMessage = useCallback((message: SendMessage) => {
     if (!clientRef.current?.connected) {
@@ -279,6 +385,85 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
+  // ✅ Inscreve-se para receber notificações em tempo real
+  const subscribeToNotifications = useCallback(
+    (userId: number) => {
+      if (!clientRef.current?.connected) {
+        console.warn(
+          "⚠️ WebSocket não conectado para notificações. Aguardando conexão...",
+        );
+        return;
+      }
+
+      console.log("✅ Inscrevendo em /topic/user/" + userId + "/notifications");
+
+      const subscription = clientRef.current.subscribe(
+        `/topic/user/${userId}/notifications`,
+        (notificationFrame) => {
+          try {
+            const notification: Notification = JSON.parse(
+              notificationFrame.body,
+            );
+
+            console.log("🔔 Nova notificação via WebSocket:", notification);
+
+            // Atualiza a lista de notificações no cache de forma otimista
+            queryClient.setQueryData(
+              notificationKeys.list(userId),
+              (oldData: any) => {
+                if (!oldData?.success) return oldData;
+
+                const existingNotifications = oldData.data || [];
+
+                // Verifica se a notificação já existe para evitar duplicação
+                const exists = existingNotifications.some(
+                  (n: Notification) => n.id === notification.id,
+                );
+
+                if (exists) {
+                  console.log("⚠️ Notificação já existe no cache, ignorando");
+                  return oldData;
+                }
+
+                // Adiciona nova notificação no início da lista
+                return {
+                  ...oldData,
+                  data: [notification, ...existingNotifications],
+                };
+              },
+            );
+
+            // Atualiza o contador de não lidas incrementalmente
+            queryClient.setQueryData(
+              notificationKeys.unreadCount(userId),
+              (oldData: any) => {
+                if (!oldData?.success) return oldData;
+
+                const currentCount = oldData.data?.unreadCount || 0;
+
+                return {
+                  ...oldData,
+                  data: {
+                    unreadCount: currentCount + 1,
+                  },
+                };
+              },
+            );
+
+            console.log("✅ Cache atualizado com nova notificação");
+          } catch (error) {
+            console.error("Erro ao processar notificação:", error);
+          }
+        },
+      );
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    },
+    [queryClient],
+  );
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -287,6 +472,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         sendMessage,
         subscribeToUserStatus,
         notifyOnlineStatus,
+        subscribeToNotifications,
+        markAsRead,
       }}
     >
       {children}

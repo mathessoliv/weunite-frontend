@@ -20,13 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { FileText, Flag, Heart, Search, Image, Loader2 } from "lucide-react";
-import type { Report, ReportedPost } from "@/@types/report.types";
+import type { Report, ReportedPost } from "@/@types/admin.types";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import {
-  getReportedPostsDetailsRequest,
-  deletePostByAdminRequest,
-  dismissReportsRequest,
-} from "@/api/services/adminService";
+import { getReportedPostsDetailsRequest } from "@/api/services/adminService";
 import { toast } from "sonner";
 
 /**
@@ -74,12 +70,13 @@ export function ReportedPostsPage() {
         username: firstReport.reporter.username,
       },
       reportedUser: {
+        id: reportedPost.post.user.id, // ID do usuário denunciado (dono do post)
         name: reportedPost.post.user.name,
         username: reportedPost.post.user.username,
       },
       reason: firstReport.reason,
       description: `Post denunciado por ${firstReport.reason}. Total de ${reportedPost.totalReports} denúncias.`,
-      status: firstReport.status.toLowerCase() as any,
+      status: reportedPost.status?.toLowerCase() as any, // Usar o status do reportedPost que reflete o estado atual
       createdAt: firstReport.createdAt,
       content: reportedPost.post.text,
       imageUrl: reportedPost.post.imageUrl || undefined,
@@ -87,44 +84,6 @@ export function ReportedPostsPage() {
 
     setSelectedReport(report);
     setIsModalOpen(true);
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja deletar este post? Esta ação não pode ser desfeita.",
-    );
-
-    if (!confirmed) return;
-
-    const response = await deletePostByAdminRequest(Number(postId));
-
-    if (response.success) {
-      toast.success(response.message || "Post deletado com sucesso!");
-      loadReportedPosts(); // Recarrega a lista
-    } else {
-      toast.error(
-        `Erro: ${response.error || "Não foi possível deletar o post"}`,
-      );
-    }
-  };
-
-  const handleDismissReports = async (postId: string) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja descartar as denúncias deste post?",
-    );
-
-    if (!confirmed) return;
-
-    const response = await dismissReportsRequest(Number(postId), "POST");
-
-    if (response.success) {
-      toast.success(response.message || "Denúncias descartadas com sucesso!");
-      loadReportedPosts(); // Recarrega a lista
-    } else {
-      toast.error(
-        `Erro: ${response.error || "Não foi possível descartar as denúncias"}`,
-      );
-    }
   };
 
   const getTimeAgoSimple = (date: string) => {
@@ -150,8 +109,11 @@ export function ReportedPostsPage() {
           .includes(searchQuery.toLowerCase())
       : true;
 
+    const statusLower = reportedPost.status?.toString().toLowerCase();
     const matchesStatus =
-      statusFilter === "all" || reportedPost.status === statusFilter;
+      statusFilter === "all"
+        ? statusLower === "pending" || statusLower === "reviewed" // "Todos" mostra apenas pendentes e em análise
+        : statusLower === statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
@@ -246,7 +208,8 @@ export function ReportedPostsPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="hidden">Oculto</SelectItem>
+                  <SelectItem value="reviewed">Em Análise</SelectItem>
+                  <SelectItem value="resolved">Resolvido</SelectItem>
                   <SelectItem value="deleted">Deletado</SelectItem>
                 </SelectContent>
               </Select>
@@ -288,8 +251,8 @@ export function ReportedPostsPage() {
                     filteredPosts.map((reportedPost) => (
                       <TableRow key={reportedPost.post.id}>
                         <TableCell className="max-w-md">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                          <div className="space-y-1 ">
+                            <div className="flex items-center gap-2 ">
                               <span className="font-medium text-sm">
                                 {reportedPost.post.user.name}
                               </span>
@@ -298,7 +261,7 @@ export function ReportedPostsPage() {
                               {reportedPost.post.text}
                             </p>
                             {reportedPost.post.imageUrl && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground ">
                                 <Image className="h-3 w-3" />
                                 <span>Com mídia</span>
                               </div>
@@ -311,8 +274,8 @@ export function ReportedPostsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1 text-xs">
-                            <div className="flex items-center gap-1">
+                          <div className="flex flex-col gap-1 text-xs ">
+                            <div className="flex items-center gap-1 ">
                               <Heart className="h-3 w-3 text-red-500" />
                               <span>
                                 {reportedPost.post.likes?.length || 0}
@@ -332,49 +295,39 @@ export function ReportedPostsPage() {
                             className={
                               reportedPost.status === "pending"
                                 ? "border-yellow-500 text-yellow-600"
-                                : reportedPost.status === "hidden"
-                                  ? "border-orange-500 text-orange-600"
-                                  : "border-red-500 text-red-600"
+                                : reportedPost.status === "reviewed"
+                                  ? "border-blue-500 text-blue-600"
+                                  : reportedPost.status === "resolved"
+                                    ? "border-green-500 text-green-600"
+                                    : reportedPost.status === "hidden"
+                                      ? "border-orange-500 text-orange-600"
+                                      : "border-red-500 text-red-600"
                             }
                           >
                             {reportedPost.status === "pending"
                               ? "Pendente"
-                              : reportedPost.status === "hidden"
-                                ? "Oculto"
-                                : "Deletado"}
+                              : reportedPost.status === "reviewed"
+                                ? "Em Análise"
+                                : reportedPost.status === "resolved"
+                                  ? "Resolvido"
+                                  : reportedPost.status === "hidden"
+                                    ? "Oculto"
+                                    : "Deletado"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {getTimeAgoSimple(reportedPost.post.createdAt)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleReviewPost(reportedPost)}
-                            >
-                              Revisar
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDismissReports(reportedPost.post.id)
-                              }
-                            >
-                              Descartar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                handleDeletePost(reportedPost.post.id)
-                              }
-                            >
-                              Deletar
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleReviewPost(reportedPost)}
+                          >
+                            {reportedPost.status === "deleted"
+                              ? "Restaurar"
+                              : "Revisar"}
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))

@@ -112,8 +112,8 @@ export const getOpportunitiesCompanyRequest = async (companyId: number) => {
     const response = await axios.get(`/opportunities/get/company/${companyId}`);
     return {
       success: true,
-      data: response.data,
-      message: response.data.message || "Oportunidade carregada com sucesso!",
+      data: response.data.data, // Acessando response.data.data para pegar o array
+      message: response.data.message || "Oportunidades carregadas com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -132,7 +132,7 @@ export const getOpportunitiesRequest = async () => {
     const response = await axios.get("/opportunities/get");
     return {
       success: true,
-      data: response.data,
+      data: response.data.data, // Acessando response.data.data para pegar o array
       message: response.data.message || "Oportunidades carregadas com sucesso!",
       error: null,
     };
@@ -144,6 +144,184 @@ export const getOpportunitiesRequest = async () => {
       message: null,
       error:
         error.response?.data?.message || "Erro ao carregar as oportunidades",
+    };
+  }
+};
+
+export const getOpportunitySubscribersRequest = async (
+  opportunityId: number,
+) => {
+  try {
+    const response = await axios.get(
+      `/subscriber/subscribers/${opportunityId}`,
+    );
+    return {
+      success: true,
+      data: response.data.data, // Acessando response.data.data para pegar o array
+      message: response.data.message || "Inscritos carregados com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao carregar os inscritos",
+    };
+  }
+};
+
+export const toggleSubscriberRequest = async (
+  athleteId: number,
+  opportunityId: number,
+) => {
+  try {
+    const response = await axios.post(
+      `/subscriber/toggleSubscriber/${athleteId}/${opportunityId}`,
+    );
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message || "Candidatura atualizada com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao atualizar a candidatura",
+    };
+  }
+};
+
+export const checkIsSubscribedRequest = async (
+  athleteId: number,
+  opportunityId: number,
+) => {
+  try {
+    const response = await axios.get(
+      `/subscriber/isSubscribed/${athleteId}/${opportunityId}`,
+    );
+    return {
+      success: true,
+      data: response.data,
+      message: null,
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: false,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao verificar status da candidatura",
+    };
+  }
+};
+
+export const getAthleteSubscriptionsRequest = async (athleteId: number) => {
+  try {
+    const response = await axios.get(`/subscriber/athlete/${athleteId}`);
+    return {
+      success: true,
+      data: response.data,
+      message: "Candidaturas carregadas com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message || "Erro ao carregar as candidaturas",
+    };
+  }
+};
+
+// ========================================
+// SAVED OPPORTUNITIES (Oportunidades Salvas)
+// ========================================
+
+export const toggleSavedOpportunityRequest = async (
+  athleteId: number,
+  opportunityId: number,
+) => {
+  try {
+    const response = await axios.post(
+      `/saved-opportunities/toggle/${athleteId}/${opportunityId}`,
+    );
+    return {
+      success: true,
+      data: response.data.data,
+      isSaved: response.data.isSaved,
+      message: response.data.message || "Operação realizada com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      isSaved: false,
+      message: null,
+      error:
+        error.response?.data?.message || "Erro ao salvar/remover oportunidade",
+    };
+  }
+};
+
+export const getSavedOpportunitiesRequest = async (athleteId: number) => {
+  try {
+    const response = await axios.get(
+      `/saved-opportunities/athlete/${athleteId}`,
+    );
+    return {
+      success: true,
+      data: response.data.data,
+      message: response.data.message || "Oportunidades salvas carregadas!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: [],
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar oportunidades salvas",
+    };
+  }
+};
+
+export const checkIsSavedRequest = async (
+  athleteId: number,
+  opportunityId: number,
+) => {
+  try {
+    const response = await axios.get(
+      `/saved-opportunities/isSaved/${athleteId}/${opportunityId}`,
+    );
+    return {
+      success: true,
+      data: response.data.data,
+      message: null,
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: false,
+      message: null,
+      error: error.response?.data?.message || "Erro ao verificar se está salva",
     };
   }
 };

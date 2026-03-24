@@ -1,15 +1,9 @@
 import { instance as axios } from "../axios";
 import type { AxiosError } from "axios";
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T | null;
-  message: string | null;
-  error: string | null;
-}
+import type { ApiResponse } from "@/types/api.types";
 
 interface CreateReportRequest {
-  type: "POST" | "OPPORTUNITY";
+  type: "POST" | "OPPORTUNITY" | "COMMENT";
   entityId: number;
   reason: string;
 }
@@ -86,11 +80,67 @@ export const getPendingReportsRequest = async (): Promise<
 };
 
 /**
+ * Busca todas as denúncias (incluindo concluídas)
+ */
+export const getAllReportsRequest = async (): Promise<
+  ApiResponse<ReportResponse[]>
+> => {
+  try {
+    const response = await axios.get("/reports/all");
+
+    return {
+      success: true,
+      data: response.data,
+      message: null,
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao carregar denúncias",
+    };
+  }
+};
+
+/**
+ * Busca denúncias por status
+ */
+export const getReportsByStatusRequest = async (
+  status: string,
+): Promise<ApiResponse<ReportResponse[]>> => {
+  try {
+    const response = await axios.get(`/reports/status/${status}`);
+
+    return {
+      success: true,
+      data: response.data,
+      message: null,
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data?.message ||
+        "Erro ao carregar denúncias por status",
+    };
+  }
+};
+
+/**
  * Busca a contagem de denúncias de uma entidade
  */
 export const getReportCountRequest = async (
   entityId: number,
-  type: "POST" | "OPPORTUNITY",
+  type: "POST" | "OPPORTUNITY" | "COMMENT",
 ): Promise<ApiResponse<number>> => {
   try {
     const response = await axios.get(`/reports/count/${entityId}/${type}`);

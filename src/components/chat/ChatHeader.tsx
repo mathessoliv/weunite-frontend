@@ -1,4 +1,4 @@
-import { Phone, Video, Info, ArrowLeft } from "lucide-react";
+import { Info, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -185,13 +185,6 @@ export const ChatHeader = ({
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="icon">
-          <Phone size={18} />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Video size={18} />
-        </Button>
-
         {isMobile ? (
           <Sheet open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <SheetTrigger asChild>{InfoButton}</SheetTrigger>

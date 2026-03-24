@@ -1,10 +1,31 @@
-import type {
-  CreatePost,
-  UpdatePost,
-  GetPost,
-} from "@/@types/post.types";
+import type { CreatePost, UpdatePost, GetPost } from "@/@types/post.types";
+import type { ToggleRepost } from "@/@types/repost.types";
 import { instance as axios } from "../axios";
 import { AxiosError } from "axios";
+
+export const repostPostRequest = async (data: ToggleRepost) => {
+  try {
+    const response = await axios.post(
+      `/posts/repost/${data.userId}/${data.postId}`,
+    );
+
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message || "Post republicado com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao republicar post",
+    };
+  }
+};
 
 export const createPostRequest = async (data: CreatePost, userId: number) => {
   try {
@@ -47,7 +68,7 @@ export const createPostRequest = async (data: CreatePost, userId: number) => {
 export const updatePostRequest = async (
   data: UpdatePost,
   userId: number,
-  postId: number
+  postId: number,
 ) => {
   try {
     const formData = new FormData();
@@ -64,7 +85,7 @@ export const updatePostRequest = async (
 
     const response = await axios.put(
       `/posts/update/${userId}/${postId}`,
-      formData
+      formData,
     );
 
     return {
@@ -75,7 +96,7 @@ export const updatePostRequest = async (
     };
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
-    
+
     return {
       success: false,
       data: null,
@@ -87,7 +108,7 @@ export const updatePostRequest = async (
 
 export const getPostRequest = async (data: GetPost) => {
   try {
-    const response = await axios.post(`/post/get/${data}`);
+    const response = await axios.get(`/post/get/${data.id}`);
 
     return {
       success: true,

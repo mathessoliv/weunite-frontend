@@ -1,6 +1,7 @@
 import type { Like } from "./like.types";
 import type { User } from "./user.types";
 import type { Comment } from "./comment.types";
+import type { Repost } from "./repost.types";
 
 export interface CreatePost {
   text: string | null;
@@ -24,9 +25,13 @@ export interface Post {
   id: string;
   text: string;
   imageUrl: string | null;
+  videoUrl?: string | null;
   likes: Like[];
   comments: Comment[];
+  reposts: Repost[];
   createdAt: string;
   updatedAt: string | null;
   user: User;
+  repostedBy?: User | null;
+  repostedAt?: string | null;
 }

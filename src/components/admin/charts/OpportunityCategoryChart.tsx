@@ -10,7 +10,7 @@ import {
   Cell,
 } from "recharts";
 import type { CategoryData } from "@/@types/admin.types";
-import { CustomTooltip } from "./ChartTooltips";
+import { CategoryTooltip } from "./ChartTooltips";
 
 interface OpportunityCategoryChartProps {
   data: CategoryData[];
@@ -18,6 +18,7 @@ interface OpportunityCategoryChartProps {
 
 /**
  * Gráfico de barras mostrando oportunidades por categoria
+ * Inclui as skills mais frequentes em cada categoria
  */
 export function OpportunityCategoryChart({
   data,
@@ -29,7 +30,7 @@ export function OpportunityCategoryChart({
           Oportunidades por Categoria
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Distribuição de vagas por área de atuação
+          Distribuição de vagas por área de atuação com skills mais frequentes
         </p>
       </CardHeader>
       <CardContent>
@@ -41,7 +42,7 @@ export function OpportunityCategoryChart({
               className="text-xs fill-muted-foreground"
             />
             <YAxis className="text-xs fill-muted-foreground" />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CategoryTooltip />} />
             <Bar
               dataKey="count"
               radius={[4, 4, 0, 0]}
